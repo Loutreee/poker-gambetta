@@ -1,0 +1,20 @@
+# Exemple de configuration Nginx pour Poker Gambetta (HTTPS avec Let's Encrypt)
+# À placer dans /etc/nginx/sites-available/poker-gambetta
+# Remplace poker.mondomaine.com par ton domaine.
+
+server {
+    listen 80;
+    server_name poker.mondomaine.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Après avoir lancé: sudo certbot --nginx -d poker.mondomaine.com
+# Certbot ajoutera automatiquement un bloc server { listen 443 ssl; ... }

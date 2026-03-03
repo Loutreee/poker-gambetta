@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  role         String        @default("player") // "player" | "dealer"
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  entriesAsTarget  LedgerEntry[] @relation("EntryTarget")
+  entriesAsCreator LedgerEntry[] @relation("EntryCreator")
+
+  @@map("users")
+}
+
+model LedgerEntry {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  amount    Int      // en centimes ou unités (ex: +10, -5)
+  note      String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String   @map("created_by")
+
+  user   User @relation("EntryTarget", fields: [userId], references: [id], onDelete: Cascade)
+  author User @relation("EntryCreator", fields: [createdBy], references: [id])
+
+  @@map("ledger_entries")
+}
