@@ -64,6 +64,8 @@ npm run dev
 
 Le frontend tourne sur `http://localhost:5173` et appelle l’API via le proxy Vite (`/api` → `localhost:3000`).
 
+**Alternative (tout en un)** : à la racine du projet, `npm run dev:all` lance le backend et le frontend dans le même terminal.
+
 ### Comptes de démo (après seed)
 
 - **Croupier** : Hugo / mot de passe `hugo`

@@ -87,6 +87,48 @@ a {
   border-bottom: 1px solid #eef0f4;
 }
 
+.table .col-rank-trend {
+  width: 1%;
+  white-space: nowrap;
+  padding-right: 4px;
+  text-align: right;
+  vertical-align: middle;
+}
+.table th.col-rank-trend {
+  border: none;
+  padding-left: 0;
+}
+.table td.col-rank-trend:empty {
+  padding-left: 0;
+}
+
+.table tr.row-current-user td {
+  background: rgba(33, 150, 243, 0.08);
+}
+
+.balance-trend {
+  margin-left: 6px;
+  vertical-align: middle;
+  display: inline-flex;
+}
+.balance-trend-up {
+  color: #0a7a2f;
+}
+.balance-trend-down {
+  color: #b00020;
+}
+
+.rank-trend {
+  font-weight: 700;
+  font-size: 12px;
+}
+.rank-trend-up {
+  color: #0a7a2f;
+}
+.rank-trend-down {
+  color: #b00020;
+}
+
 .badge {
   display: inline-block;
   padding: 4px 8px;

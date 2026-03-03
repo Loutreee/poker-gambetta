@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -13,10 +13,6 @@ export default function LoginPage() {
   const [selectedId, setSelectedId] = useState<string>("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (users.length > 0 && !selectedId) setSelectedId(users[0].id);
-  }, [users, selectedId]);
 
   const loginMutation = useMutation({
     mutationFn: ({ userId, password }: { userId: string; password: string }) =>
@@ -53,6 +49,7 @@ export default function LoginPage() {
           value={selectedId}
           onChange={(e) => { setSelectedId(e.target.value); setError(""); }}
         >
+          <option value="">Choisir un compte</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
               {u.name} {u.role === "dealer" ? "(croupier)" : ""}

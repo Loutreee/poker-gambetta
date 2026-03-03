@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type LedgerEntry } from "../lib/api";
 
@@ -21,10 +21,6 @@ export default function DealerPage() {
   });
   const players = users.filter((u) => u.role === "player");
   const [targetUserId, setTargetUserId] = useState("");
-  useEffect(() => {
-    if (players.length > 0 && (!targetUserId || !players.some((p) => p.id === targetUserId)))
-      setTargetUserId(players[0].id);
-  }, [players, targetUserId]);
   const [amount, setAmount] = useState("0");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -131,6 +127,7 @@ export default function DealerPage() {
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
             >
+              <option value="">Choisir un joueur</option>
               {players.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
@@ -147,6 +144,7 @@ export default function DealerPage() {
               className="input"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onFocus={(e) => e.target.select()}
               inputMode="decimal"
             />
           </div>

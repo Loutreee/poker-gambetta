@@ -10,6 +10,32 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR");
 }
 
+function BalanceTrend({ delta }: { delta: number }) {
+  if (delta === 0) return null;
+  if (delta > 0)
+    return (
+      <span className="balance-trend balance-trend-up" title="Solde en hausse sur la dernière semaine" aria-hidden>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12 L12 4 M12 4 L12 8 M12 4 L8 4" />
+        </svg>
+      </span>
+    );
+  return (
+    <span className="balance-trend balance-trend-down" title="Solde en baisse sur la dernière semaine" aria-hidden>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4 L4 12 M4 12 L4 8 M4 12 L8 12" />
+      </svg>
+    </span>
+  );
+}
+
+function RankTrend({ change }: { change: number }) {
+  if (change === 0) return null;
+  if (change < 0)
+    return <span className="rank-trend rank-trend-up" title="A gagné des places cette semaine">+{Math.abs(change)}</span>;
+  return <span className="rank-trend rank-trend-down" title="A perdu des places cette semaine">−{change}</span>;
+}
+
 export default function DashboardPage() {
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api.getMe() });
   const user = me?.user ?? null;
@@ -42,6 +68,7 @@ export default function DashboardPage() {
         <table className="table">
           <thead>
             <tr>
+              <th className="col-rank-trend"></th>
               <th>#</th>
               <th>Joueur</th>
               <th>Solde</th>
@@ -49,13 +76,19 @@ export default function DashboardPage() {
           </thead>
           <tbody>
             {leaderboard.map((u, idx) => (
-              <tr key={u.id}>
+              <tr key={u.id} className={u.id === user.id ? "row-current-user" : undefined}>
+                <td className="col-rank-trend">
+                  <RankTrend change={u.rankChange ?? 0} />
+                </td>
                 <td>{idx + 1}</td>
                 <td>
                   {u.name}
                   {u.role === "dealer" ? <span className="badge">croupier</span> : null}
                 </td>
-                <td style={{ fontWeight: 800 }}>{u.balance}</td>
+                <td style={{ fontWeight: 800 }}>
+                  {u.balance}
+                  <BalanceTrend delta={u.balanceDeltaWeek ?? 0} />
+                </td>
               </tr>
             ))}
           </tbody>

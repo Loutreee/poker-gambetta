@@ -1,5 +1,5 @@
 # Stage 1: build frontend
-FROM node:22-alpine AS frontend
+FROM node:20-bookworm-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -9,16 +9,17 @@ COPY public ./public
 RUN npm run build
 
 # Stage 2: build backend + runtime
-FROM node:22-alpine AS server
+FROM node:20-bookworm-slim AS server
 WORKDIR /app
 COPY server/package.json server/package-lock.json ./server/
 COPY server/prisma ./server/prisma
 RUN cd server && npm ci && npx prisma generate
-COPY server/tsconfig.json server/src ./server/
+COPY server/tsconfig.json ./server/
+COPY server/src ./server/src/
 RUN cd server && npm run build
 
 # Stage 3: run
-FROM node:22-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
 COPY --from=server /app/server/package.json /app/server/package-lock.json ./server/
 COPY --from=server /app/server/node_modules ./server/node_modules

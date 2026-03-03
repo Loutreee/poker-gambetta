@@ -50,7 +50,7 @@ export const api = {
     return fetchApi("/users");
   },
 
-  getLeaderboard(): Promise<(User & { balance: number })[]> {
+  getLeaderboard(): Promise<(User & { balance: number; balanceDeltaWeek: number; rankChange: number })[]> {
     return fetchApi("/users/leaderboard");
   },
 

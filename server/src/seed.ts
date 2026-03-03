@@ -53,6 +53,13 @@ const BANKROLL_DATA: { name: string; role: "player" | "dealer"; balance: number 
 const SEED_NAMES = new Set(BANKROLL_DATA.map((u) => u.name));
 
 async function main() {
+  // Ne rien faire si la base a déjà des users (évite d’écraser les données à chaque redémarrage Docker)
+  const existingCount = await prisma.user.count();
+  if (existingCount > 0) {
+    console.log("Seed ignoré : la base contient déjà des utilisateurs.");
+    return;
+  }
+
   // 1. Supprimer les users qui ne sont plus dans la liste
   const existingUsers = await prisma.user.findMany({ select: { id: true, name: true } });
   for (const u of existingUsers) {
