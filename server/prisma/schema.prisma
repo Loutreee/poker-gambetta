@@ -17,6 +17,8 @@ model User {
   entriesAsTarget  LedgerEntry[] @relation("EntryTarget")
   entriesAsCreator LedgerEntry[] @relation("EntryCreator")
 
+  sessionEntries   SessionEntry[]
+
   @@map("users")
 }
 
@@ -28,8 +30,41 @@ model LedgerEntry {
   createdAt DateTime @default(now()) @map("created_at")
   createdBy String   @map("created_by")
 
+  sessionId String?  @map("session_id")
+
   user   User @relation("EntryTarget", fields: [userId], references: [id], onDelete: Cascade)
   author User @relation("EntryCreator", fields: [createdBy], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id])
 
   @@map("ledger_entries")
 }
+
+model Session {
+  id        String         @id @default(cuid())
+  type      String                     // "sitngo" | "tournoi"
+  name      String?                    // nom optionnel
+  status    String         @default("open") // "open" | "closed"
+  createdAt DateTime       @default(now()) @map("created_at")
+  closedAt  DateTime?      @map("closed_at")
+
+  entries   SessionEntry[]
+  ledger    LedgerEntry[]
+
+  @@map("sessions")
+}
+
+model SessionEntry {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  userId    String   @map("user_id")
+  buyIn     Int      @default(0) @map("buy_in")
+  rebuy     Int      @default(0)
+  result    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("session_entries")
+}
+

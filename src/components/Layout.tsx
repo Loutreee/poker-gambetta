@@ -24,6 +24,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <>
               <Link to="/dashboard">Dashboard</Link>
               {user.role === "dealer" && <Link to="/dealer">Croupier</Link>}
+              <Link to="/session">Session</Link>
             </>
           )}
         </div>

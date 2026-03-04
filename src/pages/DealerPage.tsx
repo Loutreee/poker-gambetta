@@ -19,7 +19,9 @@ export default function DealerPage() {
     queryKey: ["users"],
     queryFn: () => api.getUsers(),
   });
-  const players = users.filter((u) => u.role === "player");
+  const players = users.filter(
+    (u) => u.role === "player" || (user && u.id === user.id),
+  );
   const [targetUserId, setTargetUserId] = useState("");
   const [amount, setAmount] = useState("0");
   const [note, setNote] = useState("");

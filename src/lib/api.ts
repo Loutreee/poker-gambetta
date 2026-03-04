@@ -33,6 +33,27 @@ export type LedgerEntry = {
   createdBy: string;
 };
 
+export type SessionEntry = {
+  id: string;
+  sessionId: string;
+  userId: string;
+  buyIn: number;
+  rebuy: number;
+  result: number;
+  createdAt: string;
+  user: User;
+};
+
+export type Session = {
+  id: string;
+  type: "sitngo" | "tournoi";
+  name: string | null;
+  status: "open" | "closed";
+  createdAt: string;
+  closedAt: string | null;
+  entries: SessionEntry[];
+};
+
 export const api = {
   getMe(): Promise<{ user: User | null }> {
     return fetchApi("/auth/me");
@@ -76,5 +97,62 @@ export const api = {
 
   deleteEntry(id: string): Promise<void> {
     return fetchApi(`/ledger/${id}`, { method: "DELETE" });
+  },
+
+  // Sessions (croupier)
+  getCurrentSession(): Promise<{ session: Session | null }> {
+    return fetchApi("/session/current");
+  },
+
+  getSessions(): Promise<{ sessions: Session[] }> {
+    return fetchApi("/session");
+  },
+
+  createSession(params: {
+    type: "sitngo" | "tournoi";
+    name?: string;
+    playerIds: string[];
+  }): Promise<{ session: Session }> {
+    return fetchApi("/session", { method: "POST", json: params });
+  },
+
+  updateSessionEntry(
+    sessionId: string,
+    entryId: string,
+    data: { buyIn?: number; rebuy?: number; result?: number },
+  ): Promise<{ entry: SessionEntry }> {
+    return fetchApi(`/session/${sessionId}/entry/${entryId}`, {
+      method: "PATCH",
+      json: data,
+    });
+  },
+
+  closeSession(
+    sessionId: string,
+  ): Promise<{ session: Session; ranking: { userId: string; name: string; result: number }[] }> {
+    return fetchApi(`/session/${sessionId}/close`, { method: "POST" });
+  },
+
+  addSessionEntry(sessionId: string, userId: string): Promise<{ entry: SessionEntry }> {
+    return fetchApi(`/session/${sessionId}/entry`, {
+      method: "POST",
+      json: { userId },
+    });
+  },
+
+  cancelSession(sessionId: string): Promise<{ ok: boolean }> {
+    return fetchApi(`/session/${sessionId}/cancel`, { method: "POST" });
+  },
+
+  updateSessionMeta(sessionId: string, data: { name?: string }): Promise<{ session: Session }> {
+    return fetchApi(`/session/${sessionId}`, { method: "PATCH", json: data });
+  },
+
+  deleteSession(sessionId: string): Promise<void> {
+    return fetchApi(`/session/${sessionId}`, { method: "DELETE" });
+  },
+
+  deleteSessionEntry(sessionId: string, entryId: string): Promise<void> {
+    return fetchApi(`/session/${sessionId}/entry/${entryId}`, { method: "DELETE" });
   },
 };

@@ -9,6 +9,7 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
+        timeout: 60000, // 60s pour les requêtes longues (ex: clôture session)
       },
     },
   },

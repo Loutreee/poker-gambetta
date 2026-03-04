@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 function formatAmount(amount: number): string {
@@ -37,6 +39,16 @@ function RankTrend({ change }: { change: number }) {
 }
 
 export default function DashboardPage() {
+  const [particlesReady, setParticlesReady] = useState(false);
+
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      const { loadSlim } = await import("@tsparticles/slim");
+      await loadSlim(engine);
+    }).then(() => {
+      setParticlesReady(true);
+    });
+  }, []);
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api.getMe() });
   const user = me?.user ?? null;
   const { data: leaderboard = [] } = useQuery({
@@ -75,22 +87,88 @@ export default function DashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {leaderboard.map((u, idx) => (
-              <tr key={u.id} className={u.id === user.id ? "row-current-user" : undefined}>
-                <td className="col-rank-trend">
-                  <RankTrend change={u.rankChange ?? 0} />
-                </td>
-                <td>{idx + 1}</td>
-                <td>
-                  {u.name}
-                  {u.role === "dealer" ? <span className="badge">croupier</span> : null}
-                </td>
-                <td style={{ fontWeight: 800 }}>
-                  {u.balance}
-                  <BalanceTrend delta={u.balanceDeltaWeek ?? 0} />
-                </td>
-              </tr>
-            ))}
+            {leaderboard.map((u, idx) => {
+              const rank = idx + 1;
+              const isCurrentUser = u.id === user.id;
+              const rowClasses = [
+                isCurrentUser ? "row-current-user" : "",
+                rank === 1 ? "row-first" : "",
+                !isCurrentUser && rank === 1 ? "row-rank-1" : "",
+                !isCurrentUser && rank === 2 ? "row-rank-2" : "",
+                !isCurrentUser && rank === 3 ? "row-rank-3" : "",
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined;
+
+              const rankClassName =
+                rank === 1
+                  ? "rank-pos-1 first-player-rank"
+                  : rank === 2
+                    ? "rank-pos-2"
+                    : rank === 3
+                      ? "rank-pos-3"
+                      : undefined;
+
+              return (
+                <tr key={u.id} className={rowClasses}>
+                  <td className="col-rank-trend">
+                    {rank === 1 && particlesReady && (
+                      <div className="first-row-bg-wrapper" aria-hidden>
+                        <Particles
+                          id="leaderboard-first-stars"
+                          className="first-row-particles"
+                          options={{
+                            fullScreen: { enable: false },
+                            background: { color: { value: "transparent" } },
+                            detectRetina: true,
+                            particles: {
+                              number: { value: 48, density: { enable: false } },
+                              color: { value: ["#ffd700", "#fff8dc", "#ffffff"] },
+                              shape: { type: "star" },
+                              opacity: {
+                                value: 0.6,
+                              },
+                              size: {
+                                value: { min: 1, max: 3 },
+                              },
+                              move: {
+                                enable: true,
+                                speed: 0.8,
+                                direction: "none",
+                                outModes: { default: "bounce" },
+                              },
+                            },
+                            interactivity: {
+                              events: {
+                                onHover: { enable: false, mode: [] },
+                                onClick: { enable: false, mode: [] },
+                              },
+                            },
+                          }}
+                        />
+                      </div>
+                    )}
+                    <RankTrend change={u.rankChange ?? 0} />
+                  </td>
+                  <td>
+                    <span className={rankClassName}>{rank}</span>
+                  </td>
+                  <td>
+                    <span className={rank === 1 ? "first-player-name" : undefined}>{u.name}</span>
+                    {rank === 1 && (
+                      <span className="crown-icon" aria-hidden>
+                        👑
+                      </span>
+                    )}
+                    {u.role === "dealer" ? <span className="badge">croupier</span> : null}
+                  </td>
+                  <td style={{ fontWeight: 800 }}>
+                    {u.balance}
+                    <BalanceTrend delta={u.balanceDeltaWeek ?? 0} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

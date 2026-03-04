@@ -5,6 +5,7 @@ import HomeRedirect from "./components/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import DealerPage from "./pages/DealerPage";
+import SessionPage from "./pages/SessionPage";
 
 export default function App() {
   return (
@@ -27,6 +28,15 @@ export default function App() {
           element={
             <ProtectedRoute role="dealer">
               <DealerPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/session"
+          element={
+            <ProtectedRoute>
+              <SessionPage />
             </ProtectedRoute>
           }
         />

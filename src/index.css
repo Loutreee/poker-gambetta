@@ -87,6 +87,22 @@ a {
   border-bottom: 1px solid #eef0f4;
 }
 
+.table th.col-gain,
+.table td.col-gain {
+  text-align: left !important;
+  width: 90px;
+}
+
+.table th.col-rank,
+.table td.col-rank {
+  width: 40px;
+}
+
+.table th.col-player,
+.table td.col-player {
+  width: 220px;
+}
+
 .table .col-rank-trend {
   width: 1%;
   white-space: nowrap;
@@ -104,6 +120,75 @@ a {
 
 .table tr.row-current-user td {
   background: rgba(33, 150, 243, 0.08);
+}
+
+/* Wrapper = toute la ligne du premier (ancêtre positionné = tr.row-first) */
+/* pointer-events: none pour que la souris traverse et atteigne le texte en dessous */
+.first-row-bg-wrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.first-row-bg-wrapper * {
+  pointer-events: none;
+}
+
+/* Canvas des étoiles : pile la taille de la ligne + tout petit débordement */
+.first-row-particles {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: -4px;
+  bottom: -4px;
+  z-index: 0;
+}
+
+.table tr.row-first {
+  position: relative;
+}
+
+.table tr.row-rank-1 td {
+  background: rgba(212, 175, 55, 0.14); /* or accentué */
+}
+
+.table tr.row-rank-2 td {
+  background: rgba(192, 192, 192, 0.14); /* argent accentué */
+}
+
+.table tr.row-rank-3 td {
+  background: rgba(205, 127, 50, 0.14); /* bronze accentué */
+}
+
+.rank-pos-1 {
+  font-weight: 700;
+  color: #b8860b; /* or plus soutenu */
+}
+.rank-pos-2 {
+  font-weight: 700;
+  color: #8b8b8b; /* argent plus soutenu */
+}
+.rank-pos-3 {
+  font-weight: 700;
+  color: #a0522d; /* bronze plus soutenu */
+}
+
+.crown-icon {
+  margin-left: 6px;
+  font-size: 14px;
+}
+
+.first-player-rank {
+  font-size: 1.06rem;
+}
+
+.first-player-name {
+  font-weight: 700;
+  font-size: 1.02rem;
 }
 
 .balance-trend {
@@ -137,4 +222,22 @@ a {
   background: #fafafa;
   font-size: 12px;
   margin-left: 8px;
+}
+
+.btn-icon-danger {
+  border: 1px solid #f48fb1;
+  background: #fff5f7;
+  color: #b00020;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-icon-danger:hover {
+  background: #ffe3ea;
 }
