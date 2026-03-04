@@ -1,9 +1,14 @@
-import { Router } from "express";
+import { Request, Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware, requireRole } from "../auth.js";
 
 const prisma = new PrismaClient();
 export const sessionRouter = Router();
+
+function param(req: Request, key: string): string {
+  const v = req.params[key];
+  return Array.isArray(v) ? v[0] ?? "" : (v ?? "");
+}
 
 async function recomputeSessionLedger(sessionId: string, dealerId: string): Promise<void> {
   if (!dealerId) throw new Error("dealerId manquant");
@@ -76,7 +81,7 @@ sessionRouter.get("/", async (_req, res) => {
 
 // Met à jour les métadonnées d'une session (nom) — croupier uniquement
 sessionRouter.patch("/:sessionId", requireRole("dealer"), async (req, res) => {
-  const { sessionId } = req.params;
+  const sessionId = param(req, "sessionId");
   const { name } = req.body as { name?: string };
 
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
@@ -97,7 +102,7 @@ sessionRouter.patch("/:sessionId", requireRole("dealer"), async (req, res) => {
 
 // Supprime une session fermée de l'historique — croupier uniquement
 sessionRouter.delete("/:sessionId", requireRole("dealer"), async (req, res) => {
-  const { sessionId } = req.params;
+  const sessionId = param(req, "sessionId");
 
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session || session.status !== "closed") {
@@ -150,7 +155,8 @@ sessionRouter.post("/", requireRole("dealer"), async (req, res) => {
 
 // Met à jour une entrée de session (buyIn, rebuy, result) — croupier uniquement
 sessionRouter.patch("/:sessionId/entry/:entryId", requireRole("dealer"), async (req, res) => {
-  const { sessionId, entryId } = req.params;
+  const sessionId = param(req, "sessionId");
+  const entryId = param(req, "entryId");
   const { buyIn, rebuy, result } = req.body as {
     buyIn?: number;
     rebuy?: number;
@@ -186,7 +192,7 @@ sessionRouter.patch("/:sessionId/entry/:entryId", requireRole("dealer"), async (
 
 // Ajoute un joueur à une session (sit & go uniquement) — croupier uniquement
 sessionRouter.post("/:sessionId/entry", requireRole("dealer"), async (req, res) => {
-  const { sessionId } = req.params;
+  const sessionId = param(req, "sessionId");
   const { userId } = req.body as { userId?: string };
 
   if (!userId) {
@@ -228,7 +234,7 @@ sessionRouter.post("/:sessionId/entry", requireRole("dealer"), async (req, res) 
 
 // Annule une session (supprime sans écrire dans le ledger) — croupier uniquement
 sessionRouter.post("/:sessionId/cancel", requireRole("dealer"), async (req, res) => {
-  const { sessionId } = req.params;
+  const sessionId = param(req, "sessionId");
 
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session || session.status !== "open") {
@@ -242,7 +248,8 @@ sessionRouter.post("/:sessionId/cancel", requireRole("dealer"), async (req, res)
 
 // Supprime une entrée (joueur) d'une session — croupier uniquement
 sessionRouter.delete("/:sessionId/entry/:entryId", requireRole("dealer"), async (req, res) => {
-  const { sessionId, entryId } = req.params;
+  const sessionId = param(req, "sessionId");
+  const entryId = param(req, "entryId");
 
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) {
@@ -262,7 +269,7 @@ sessionRouter.delete("/:sessionId/entry/:entryId", requireRole("dealer"), async 
 
 // Clôture la session, crée les entrées ledger et renvoie un classement de la session — croupier uniquement
 sessionRouter.post("/:sessionId/close", requireRole("dealer"), async (req, res) => {
-  const { sessionId } = req.params;
+  const sessionId = param(req, "sessionId");
   const dealer = (req as { user?: { id: string; name: string } }).user;
 
   try {

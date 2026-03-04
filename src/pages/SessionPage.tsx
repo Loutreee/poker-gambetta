@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type Session, type SessionEntry, type User } from "../lib/api";
+import { api, type Session, type SessionEntry } from "../lib/api";
 
 type SessionType = "sitngo" | "tournoi";
 
