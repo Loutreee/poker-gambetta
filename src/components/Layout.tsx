@@ -27,6 +27,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <Link to="/dashboard" onClick={() => trigger("nudge")}>Dashboard</Link>
               {user.role === "dealer" && <Link to="/dealer" onClick={() => trigger("nudge")}>Croupier</Link>}
               <Link to="/session" onClick={() => trigger("nudge")}>Session</Link>
+              <Link to="/settings" onClick={() => trigger("nudge")}>Paramètres</Link>
             </>
           )}
         </nav>

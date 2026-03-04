@@ -67,6 +67,13 @@ export const api = {
     return fetchApi("/auth/logout", { method: "POST" });
   },
 
+  changePassword(currentPassword: string, newPassword: string): Promise<{ ok: boolean }> {
+    return fetchApi("/auth/change-password", {
+      method: "POST",
+      json: { currentPassword, newPassword },
+    });
+  },
+
   getUsers(): Promise<User[]> {
     return fetchApi("/users");
   },

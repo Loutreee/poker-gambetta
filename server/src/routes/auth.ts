@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { signToken } from "../auth.js";
+import { authMiddleware } from "../auth.js";
 
 const prisma = new PrismaClient();
 export const authRouter = Router();
@@ -59,4 +60,39 @@ authRouter.get("/me", async (req, res) => {
     select: { id: true, name: true, role: true },
   });
   res.json({ user: user ?? null });
+});
+
+authRouter.post("/change-password", authMiddleware, async (req, res) => {
+  const user = (req as { user: { id: string } }).user;
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
+  if (typeof currentPassword !== "string" || !currentPassword.trim()) {
+    res.status(400).json({ error: "Mot de passe actuel requis." });
+    return;
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    res.status(400).json({ error: "Le nouveau mot de passe doit faire au moins 6 caractères." });
+    return;
+  }
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { passwordHash: true },
+  });
+  if (!dbUser) {
+    res.status(401).json({ error: "Utilisateur introuvable." });
+    return;
+  }
+  const ok = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+  if (!ok) {
+    res.status(401).json({ error: "Mot de passe actuel incorrect." });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+  res.json({ ok: true });
 });

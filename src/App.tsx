@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import DealerPage from "./pages/DealerPage";
 import SessionPage from "./pages/SessionPage";
+import SettingsPage from "./pages/SettingsPage";
 
 const TOAST_POSITION_DESKTOP = "bottom-right";
 const TOAST_POSITION_MOBILE = "bottom-center";
@@ -68,6 +69,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SessionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />
