@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWebHaptics } from "web-haptics/react";
 import { api } from "../lib/api";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { trigger } = useWebHaptics();
   const { data } = useQuery({ queryKey: ["me"], queryFn: () => api.getMe() });
   const user = data?.user ?? null;
 
@@ -16,39 +18,39 @@ export default function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="container">
-      <div className="row space-between" style={{ marginBottom: 16 }}>
-        <div className="row" style={{ gap: 16 }}>
-          <Link to="/" style={{ fontWeight: 800 }}>Poker Gambetta</Link>
+    <div className="container layout-container">
+      <header className="layout-header">
+        <nav className="layout-nav">
+          <Link to="/" className="layout-logo" onClick={() => trigger("nudge")}>Poker Gambetta</Link>
           {user && (
             <>
-              <Link to="/dashboard">Dashboard</Link>
-              {user.role === "dealer" && <Link to="/dealer">Croupier</Link>}
-              <Link to="/session">Session</Link>
+              <Link to="/dashboard" onClick={() => trigger("nudge")}>Dashboard</Link>
+              {user.role === "dealer" && <Link to="/dealer" onClick={() => trigger("nudge")}>Croupier</Link>}
+              <Link to="/session" onClick={() => trigger("nudge")}>Session</Link>
             </>
           )}
-        </div>
-
-        <div className="row" style={{ gap: 10 }}>
+        </nav>
+        <div className="layout-actions">
           {user ? (
             <>
-              <div className="badge">
+              <span className="badge layout-badge">
                 {user.name} ({user.role === "dealer" ? "croupier" : "joueur"})
-              </div>
+              </span>
               <button
+                type="button"
                 className="btn secondary"
-                onClick={handleLogout}
+                onClick={() => { trigger("success"); handleLogout(); }}
               >
                 Déconnexion
               </button>
             </>
           ) : (
-            <Link className="btn" to="/login">Connexion</Link>
+            <Link className="btn" to="/login" onClick={() => trigger("success")}>Connexion</Link>
           )}
         </div>
-      </div>
+      </header>
 
-      {children}
+      <main className="layout-main">{children}</main>
     </div>
   );
 }

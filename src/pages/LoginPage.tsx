@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useWebHaptics } from "web-haptics/react";
 import { api } from "../lib/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { trigger } = useWebHaptics();
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: () => api.getUsers(),
@@ -18,10 +21,14 @@ export default function LoginPage() {
     mutationFn: ({ userId, password }: { userId: string; password: string }) =>
       api.login(userId, password),
     onSuccess: (data) => {
+      toast.success("Connecté !");
       queryClient.setQueryData(["me"], { user: data.user });
       navigate("/dashboard");
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      setError(err.message);
+      toast.error(err.message);
+    },
   });
 
   const handleSubmit = () => {
@@ -80,8 +87,9 @@ export default function LoginPage() {
 
       <div className="row" style={{ marginTop: 16, justifyContent: "flex-end" }}>
         <button
+          type="button"
           className="btn"
-          onClick={handleSubmit}
+          onClick={() => { trigger("success"); handleSubmit(); }}
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? "Connexion…" : "Se connecter"}

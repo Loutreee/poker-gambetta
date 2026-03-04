@@ -1,5 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReward } from "partycles";
+import { toast } from "sonner";
+import { useWebHaptics } from "web-haptics/react";
 import { api, type Session, type SessionEntry } from "../lib/api";
 
 type SessionType = "sitngo" | "tournoi";
@@ -11,6 +14,7 @@ function formatAmount(amount: number): string {
 
 export default function SessionPage() {
   const queryClient = useQueryClient();
+  const { trigger } = useWebHaptics();
   const { data: meData } = useQuery({ queryKey: ["me"], queryFn: () => api.getMe() });
   const me = meData?.user ?? null;
 
@@ -43,16 +47,30 @@ export default function SessionPage() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingSessionName, setEditingSessionName] = useState<string>("");
 
+  const lastClosedSessionIdRef = useRef<string | null>(null);
+  const { reward: rewardConfetti } = useReward("confetti-trigger", "confetti", {
+    particleCount: 80,
+    spread: 120,
+    startVelocity: 25,
+    elementSize: 12,
+    lifetime: 300,
+    colors: ["#ffd700", "#e91e63", "#9c27b0", "#2196f3", "#4caf50", "#ff9800"],
+  });
+
   const createSessionMutation = useMutation({
     mutationFn: (params: { type: SessionType; name?: string; playerIds: string[]; buyIn?: number }) =>
       api.createSession(params),
     onSuccess: () => {
+      toast.success("Session créée");
       setError("");
       setClosingRanking(null);
       queryClient.invalidateQueries({ queryKey: ["session", "current"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      setError(err.message);
+      toast.error(err.message);
+    },
   });
 
   const updateEntryMutation = useMutation({
@@ -62,40 +80,60 @@ export default function SessionPage() {
       data: { buyIn?: number; rebuy?: number; result?: number };
     }) => api.updateSessionEntry(args.sessionId, args.entryId, args.data),
     onSuccess: () => {
+      toast.success("Modification enregistrée");
       queryClient.invalidateQueries({ queryKey: ["session", "current"] });
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const closeSessionMutation = useMutation({
     mutationFn: (sessionId: string) => api.closeSession(sessionId),
-    onSuccess: (data) => {
+    onSuccess: (data, sessionId) => {
+      toast.success("Session clôturée");
+      lastClosedSessionIdRef.current = sessionId;
       setClosingRanking(data.ranking);
       queryClient.invalidateQueries({ queryKey: ["session", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["session", "history"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["ledger"] });
       queryClient.invalidateQueries({ queryKey: ["ledger", "latest"] });
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      setError(err.message);
+      toast.error(err.message);
+    },
   });
 
   const cancelSessionMutation = useMutation({
     mutationFn: (sessionId: string) => api.cancelSession(sessionId),
     onSuccess: () => {
+      toast.success("Session annulée");
       setClosingRanking(null);
       queryClient.invalidateQueries({ queryKey: ["session", "current"] });
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
   });
-
-  if (!me) return null;
-
-  const session: Session | null = current.session;
-  const isDealer = me.role === "dealer";
 
   const { data: history = { sessions: [] } } = useQuery({
     queryKey: ["session", "history"],
     queryFn: () => api.getSessions(),
   });
+
+  useEffect(() => {
+    const closedId = lastClosedSessionIdRef.current;
+    if (closedId && history.sessions?.length > 0 && history.sessions[0].id === closedId) {
+      lastClosedSessionIdRef.current = null;
+      const t = setTimeout(() => rewardConfetti(), 150);
+      return () => clearTimeout(t);
+    }
+  }, [history.sessions, rewardConfetti]);
+
+  if (!me) return null;
+
+  const session: Session | null = current.session;
+  const isDealer = me.role === "dealer";
 
   // Ordre d'affichage figé au premier chargement de la session (évite que les lignes bougent au refetch)
   const entryOrderRef = useRef<{ sessionId: string; order: string[] }>({ sessionId: "", order: [] });
@@ -163,11 +201,14 @@ export default function SessionPage() {
   async function saveEditSession(id: string) {
     try {
       await api.updateSessionMeta(id, { name: editingSessionName.trim() || undefined });
+      toast.success("Session enregistrée");
       setEditingSessionId(null);
       setEditingSessionName("");
       queryClient.invalidateQueries({ queryKey: ["session", "history"] });
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      setError(msg);
+      toast.error(msg);
     }
   }
 
@@ -175,14 +216,18 @@ export default function SessionPage() {
     if (!window.confirm("Supprimer cette session de l'historique ?")) return;
     try {
       await api.deleteSession(id);
+      toast.success("Session supprimée");
       queryClient.invalidateQueries({ queryKey: ["session", "history"] });
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      setError(msg);
+      toast.error(msg);
     }
   }
 
   return (
-    <div className="grid">
+    <div className="grid" style={{ position: "relative" }}>
+      <div id="confetti-trigger" aria-hidden style={{ position: "absolute", left: "50%", top: 500, width: 1, height: 1, pointerEvents: "none" }} />
       <div className="card">
         <h2 style={{ marginTop: 0 }}>
           Session de jeu{" "}
@@ -266,8 +311,9 @@ export default function SessionPage() {
 
             <div className="row" style={{ marginTop: 16, justifyContent: "flex-end" }}>
               <button
+                type="button"
                 className="btn"
-                onClick={handleCreateSession}
+                onClick={() => { trigger("success"); handleCreateSession(); }}
                 disabled={createSessionMutation.isPending}
               >
                 {createSessionMutation.isPending ? "Création…" : "Créer la session"}
@@ -344,17 +390,22 @@ export default function SessionPage() {
                             className="btn-icon-danger"
                             title="Retirer ce joueur de la session"
                             onClick={() => {
+                              trigger("error");
                               if (!window.confirm("Retirer ce joueur de la session en cours ?")) {
                                 return;
                               }
                               api
                                 .deleteSessionEntry(session.id, e.id)
-                                .then(() =>
+                                .then(() => {
+                                  toast.success("Joueur retiré");
                                   queryClient.invalidateQueries({
                                     queryKey: ["session", "current"],
-                                  }),
-                                )
-                                .catch((err) => setError((err as Error).message));
+                                  });
+                                })
+                                .catch((err) => {
+                                  setError((err as Error).message);
+                                  toast.error((err as Error).message);
+                                });
                             }}
                           >
                             ✕
@@ -387,16 +438,22 @@ export default function SessionPage() {
                       ))}
                   </select>
                   <button
+                    type="button"
                     className="btn"
                     onClick={() => {
+                      trigger("success");
                       if (!newPlayerId) return;
                       api
                         .addSessionEntry(session.id, newPlayerId)
                         .then(() => {
+                          toast.success("Joueur ajouté");
                           setNewPlayerId("");
                           queryClient.invalidateQueries({ queryKey: ["session", "current"] });
                         })
-                        .catch((err) => setError((err as Error).message));
+                        .catch((err) => {
+                          setError((err as Error).message);
+                          toast.error((err as Error).message);
+                        });
                     }}
                     disabled={!newPlayerId}
                   >
@@ -412,15 +469,17 @@ export default function SessionPage() {
 
             <div className="row" style={{ marginTop: 16, justifyContent: "flex-end", gap: 8 }}>
               <button
+                type="button"
                 className="btn secondary"
-                onClick={() => handleCancelSession(session.id)}
+                onClick={() => { trigger("nudge"); handleCancelSession(session.id); }}
                 disabled={cancelSessionMutation.isPending}
               >
                 Annuler
               </button>
               <button
+                type="button"
                 className="btn"
-                onClick={() => handleCloseSession(session.id)}
+                onClick={() => { trigger("success"); handleCloseSession(session.id); }}
                 disabled={closeSessionMutation.isPending}
               >
                 {closeSessionMutation.isPending ? "Clôture…" : "Mettre fin à la partie"}
@@ -522,7 +581,7 @@ export default function SessionPage() {
                             <button
                               className="btn"
                               type="button"
-                              onClick={() => saveEditSession(s.id)}
+                              onClick={() => { trigger("success"); saveEditSession(s.id); }}
                             >
                               Sauver
                             </button>
@@ -530,6 +589,7 @@ export default function SessionPage() {
                               className="btn secondary"
                               type="button"
                               onClick={() => {
+                                trigger("nudge");
                                 setEditingSessionId(null);
                                 setEditingSessionName("");
                               }}
@@ -542,14 +602,14 @@ export default function SessionPage() {
                             <button
                               className="btn secondary"
                               type="button"
-                              onClick={() => startEditSession(s)}
+                              onClick={() => { trigger("nudge"); startEditSession(s); }}
                             >
                               Modifier
                             </button>
                             <button
                               className="btn secondary"
                               type="button"
-                              onClick={() => deleteSession(s.id)}
+                              onClick={() => { trigger("error"); deleteSession(s.id); }}
                             >
                               Supprimer
                             </button>
@@ -636,12 +696,16 @@ export default function SessionPage() {
                                       .updateSessionEntry(s.id, e.id, {
                                         buyIn: Number(ev.target.value),
                                       })
-                                      .then(() =>
+                                      .then(() => {
+                                        toast.success("Modification enregistrée");
                                         queryClient.invalidateQueries({
                                           queryKey: ["session", "history"],
-                                        }),
-                                      )
-                                      .catch((err) => setError((err as Error).message))
+                                        });
+                                      })
+                                      .catch((err) => {
+                                        setError((err as Error).message);
+                                        toast.error((err as Error).message);
+                                      })
                                   }
                                 />
                               </td>
@@ -656,12 +720,16 @@ export default function SessionPage() {
                                       .updateSessionEntry(s.id, e.id, {
                                         rebuy: Number(ev.target.value),
                                       })
-                                      .then(() =>
+                                      .then(() => {
+                                        toast.success("Modification enregistrée");
                                         queryClient.invalidateQueries({
                                           queryKey: ["session", "history"],
-                                        }),
-                                      )
-                                      .catch((err) => setError((err as Error).message))
+                                        });
+                                      })
+                                      .catch((err) => {
+                                        setError((err as Error).message);
+                                        toast.error((err as Error).message);
+                                      })
                                   }
                                 />
                               </td>
@@ -676,12 +744,16 @@ export default function SessionPage() {
                                       .updateSessionEntry(s.id, e.id, {
                                         result: Number(ev.target.value),
                                       })
-                                      .then(() =>
+                                      .then(() => {
+                                        toast.success("Modification enregistrée");
                                         queryClient.invalidateQueries({
                                           queryKey: ["session", "history"],
-                                        }),
-                                      )
-                                      .catch((err) => setError((err as Error).message))
+                                        });
+                                      })
+                                      .catch((err) => {
+                                        setError((err as Error).message);
+                                        toast.error((err as Error).message);
+                                      })
                                   }
                                 />
                               </td>
@@ -692,16 +764,21 @@ export default function SessionPage() {
                                 <button
                                   className="btn secondary"
                                   type="button"
-                                  onClick={() =>
+                                  onClick={() => {
+                                    trigger("error");
                                     api
                                       .deleteSessionEntry(s.id, e.id)
-                                      .then(() =>
+                                      .then(() => {
+                                        toast.success("Joueur retiré");
                                         queryClient.invalidateQueries({
                                           queryKey: ["session", "history"],
-                                        }),
-                                      )
-                                      .catch((err) => setError((err as Error).message))
-                                  }
+                                        });
+                                      })
+                                      .catch((err) => {
+                                        setError((err as Error).message);
+                                        toast.error((err as Error).message);
+                                      });
+                                  }}
                                 >
                                   Retirer
                                 </button>

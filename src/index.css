@@ -224,6 +224,42 @@ a {
   margin-left: 8px;
 }
 
+/* Layout header (desktop) */
+.layout-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.layout-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.layout-nav a {
+  padding: 6px 0;
+}
+
+.layout-logo {
+  font-weight: 800;
+}
+
+.layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.layout-main {
+  min-height: 0;
+}
+
 .btn-icon-danger {
   border: 1px solid #f48fb1;
   background: #fff5f7;
@@ -240,4 +276,143 @@ a {
 
 .btn-icon-danger:hover {
   background: #ffe3ea;
+}
+
+/* ---------- Mobile / portable ---------- */
+@media (max-width: 768px) {
+  :root {
+    font-size: 15px;
+  }
+
+  .container.layout-container {
+    padding: 12px 16px;
+    max-width: 100%;
+  }
+
+  .layout-header {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .layout-nav {
+    gap: 12px;
+  }
+
+  .layout-nav a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .layout-actions .btn,
+  .layout-actions .btn.secondary {
+    min-height: 44px;
+  }
+
+  .container {
+    padding: 12px 16px;
+    max-width: 100%;
+  }
+
+  .card {
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+
+  .grid {
+    gap: 10px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+  }
+
+  .input,
+  .select {
+    min-height: 44px;
+    padding: 12px 14px;
+    font-size: 16px; /* évite le zoom sur iOS */
+  }
+
+  .table {
+    font-size: 0.9rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 6px;
+  }
+
+  .table th.col-player,
+  .table td.col-player {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card .table {
+    margin-left: -14px;
+    margin-right: -14px;
+    width: calc(100% + 28px);
+  }
+
+  .card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  h1, h2, h3, h4 {
+    word-break: break-word;
+  }
+
+  .badge {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px 12px;
+  }
+
+  .card {
+    padding: 10px 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 4px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Toasts Sonner : lisible et safe-area sur mobile */
+[data-sonner-toaster] {
+  --width: min(calc(100vw - 24px), 360px);
+}
+[data-sonner-toast] {
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+@media (max-width: 768px) {
+  [data-sonner-toast] {
+    font-size: 1rem;
+    padding: 14px 16px;
+    margin-left: max(12px, env(safe-area-inset-left));
+    margin-right: max(12px, env(safe-area-inset-right));
+    margin-bottom: max(8px, env(safe-area-inset-bottom));
+  }
 }

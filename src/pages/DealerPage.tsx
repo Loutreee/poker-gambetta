@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useWebHaptics } from "web-haptics/react";
 import { api, type LedgerEntry } from "../lib/api";
 
 function formatAmount(amount: number): string {
@@ -13,6 +15,7 @@ function formatDate(iso: string): string {
 
 export default function DealerPage() {
   const queryClient = useQueryClient();
+  const { trigger } = useWebHaptics();
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => api.getMe() });
   const user = me?.user ?? null;
   const { data: users = [] } = useQuery({
@@ -41,6 +44,7 @@ export default function DealerPage() {
     mutationFn: (params: { userId: string; amount: number; note: string }) =>
       api.createEntry(params.userId, params.amount, params.note),
     onSuccess: () => {
+      toast.success("Entrée ajoutée");
       setOk("Entrée ajoutée.");
       setAmount("0");
       setNote("");
@@ -49,27 +53,34 @@ export default function DealerPage() {
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       refetchEntries();
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      setError(err.message);
+      toast.error(err.message);
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, amount, note }: { id: string; amount: number; note: string }) =>
       api.updateEntry(id, { amount, note }),
     onSuccess: () => {
+      toast.success("Entrée modifiée");
       setEditingId(null);
       queryClient.invalidateQueries({ queryKey: ["ledger"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       refetchEntries();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.deleteEntry(id),
     onSuccess: () => {
+      toast.success("Entrée supprimée");
       queryClient.invalidateQueries({ queryKey: ["ledger"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       refetchEntries();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   function submit() {
@@ -177,8 +188,9 @@ export default function DealerPage() {
 
         <div className="row" style={{ marginTop: 16, justifyContent: "flex-end" }}>
           <button
+            type="button"
             className="btn"
-            onClick={submit}
+            onClick={() => { trigger("success"); submit(); }}
             disabled={createMutation.isPending}
           >
             {createMutation.isPending ? "Ajout…" : "Ajouter"}
@@ -224,10 +236,10 @@ export default function DealerPage() {
                             />
                           </td>
                           <td>
-                            <button type="button" className="btn" onClick={saveEdit}>
+                            <button type="button" className="btn" onClick={() => { trigger("success"); saveEdit(); }}>
                               Sauvegarder
                             </button>{" "}
-                            <button type="button" className="btn" onClick={cancelEdit}>
+                            <button type="button" className="btn" onClick={() => { trigger("nudge"); cancelEdit(); }}>
                               Annuler
                             </button>
                           </td>
@@ -238,13 +250,13 @@ export default function DealerPage() {
                           <td style={{ fontWeight: 800 }}>{formatAmount(e.amount)}</td>
                           <td>{e.note}</td>
                           <td>
-                            <button type="button" className="btn" onClick={() => startEdit(e)}>
+                            <button type="button" className="btn" onClick={() => { trigger("nudge"); startEdit(e); }}>
                               Modifier
                             </button>{" "}
                             <button
                               type="button"
                               className="btn"
-                              onClick={() => deleteMutation.mutate(e.id)}
+                              onClick={() => { trigger("error"); deleteMutation.mutate(e.id); }}
                             >
                               Supprimer
                             </button>
