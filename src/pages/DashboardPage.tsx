@@ -75,7 +75,7 @@ export default function DashboardPage() {
 
   return (
     <div className="grid grid-2">
-      <div className="card">
+      <div className="card card-no-scroll-x">
         <h2 style={{ marginTop: 0 }}>Classement</h2>
         <table className="table">
           <thead>

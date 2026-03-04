@@ -148,8 +148,34 @@ a {
   z-index: 0;
 }
 
+/* Ligne du 1er : ancêtre positionné pour le wrapper d’étoiles sur toute la ligne */
+/* overflow + transform pour contenir et ancrer correctement sur Safari/iOS */
 .table tr.row-first {
   position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Mobile : Safari n’ancre pas toujours au tr, donc on ancre au td et on étend le wrapper
+   sur toute la ligne ; overflow:hidden du tr coupe le surplus */
+@media (max-width: 768px) {
+  .table tr.row-first td.col-rank-trend {
+    position: relative;
+  }
+  .table tr.row-first .first-row-bg-wrapper {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100vw;
+    right: auto;
+  }
+  .table tr.row-first .first-row-particles {
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+  }
 }
 
 .table tr.row-rank-1 td {
@@ -370,6 +396,11 @@ a {
   .card {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .card-no-scroll-x {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: auto;
   }
 
   h1, h2, h3, h4 {
