@@ -9,7 +9,7 @@ type SessionType = "sitngo" | "tournoi";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount}`;
+  return `${sign}${amount} $`;
 }
 
 export default function SessionPage() {

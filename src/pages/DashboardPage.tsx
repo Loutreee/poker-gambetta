@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount}`;
+  return `${sign}${amount} $`;
 }
 
 function formatDate(iso: string): string {
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                     {u.role === "dealer" ? <span className="badge">croupier</span> : null}
                   </td>
                   <td style={{ fontWeight: 800 }}>
-                    {u.balance}
+                    {u.balance} $
                     <BalanceTrend delta={u.balanceDeltaWeek ?? 0} />
                   </td>
                 </tr>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
               {myEntries.slice(0, 12).map((e) => (
                 <tr key={e.id}>
                   <td>{formatDate(e.createdAt)}</td>
-                  <td style={{ fontWeight: 800 }}>{formatAmount(e.amount)}</td>
+                  <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
                   <td>{e.note}</td>
                 </tr>
               ))}
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                   <tr key={e.id}>
                     <td>{formatDate(e.createdAt)}</td>
                     <td>{userIdToName[e.userId] ?? e.userId}</td>
-                    <td style={{ fontWeight: 800 }}>{formatAmount(e.amount)}</td>
+                    <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
                     <td>{e.note}</td>
                   </tr>
                 ))}

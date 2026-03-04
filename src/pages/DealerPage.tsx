@@ -6,7 +6,7 @@ import { api, type LedgerEntry } from "../lib/api";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount}`;
+  return `${sign}${amount} $`;
 }
 
 function formatDate(iso: string): string {
