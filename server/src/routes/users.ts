@@ -95,9 +95,9 @@ usersRouter.get("/leaderboard", authMiddleware, async (_req, res) => {
   res.json(leaderboard);
 });
 
-function param(req: { params: Record<string, string | undefined> }, key: string): string {
+function param(req: { params: Record<string, string | string[] | undefined> }, key: string): string {
   const v = req.params[key];
-  return typeof v === "string" ? v : "";
+  return typeof v === "string" ? v : Array.isArray(v) ? v[0] ?? "" : "";
 }
 
 // Historique de la banque par session (pour le graphique) — basé sur SessionEntry (result - buyIn - rebuy) + solde initial ledger
