@@ -10,8 +10,10 @@ datasource db {
 model User {
   id           String        @id @default(cuid())
   name         String
-  role         String        @default("player") // "player" | "dealer"
+  role         String        @default("player") // "player" | "dealer" | "admin"
   passwordHash String        @map("password_hash")
+  avatarUrl    String?       @map("avatar_url")
+  bio          String?       @map("bio")
   createdAt    DateTime      @default(now()) @map("created_at")
 
   entriesAsTarget  LedgerEntry[] @relation("EntryTarget")

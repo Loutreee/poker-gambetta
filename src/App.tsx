@@ -3,12 +3,15 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
-import HomeRedirect from "./components/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import DealerPage from "./pages/DealerPage";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
+import AdminPage from "./pages/AdminPage";
+import PokerHandsPage from "./pages/PokerHandsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const TOAST_POSITION_DESKTOP = "bottom-right";
 const TOAST_POSITION_MOBILE = "bottom-center";
@@ -43,7 +46,14 @@ export default function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<HomeRedirect />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
 
         <Route
@@ -78,6 +88,33 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/poker-hands"
+          element={
+            <ProtectedRoute>
+              <PokerHandsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/:userId"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

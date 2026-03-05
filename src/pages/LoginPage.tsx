@@ -23,7 +23,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       toast.success("Connecté !");
       queryClient.setQueryData(["me"], { user: data.user });
-      navigate("/dashboard");
+      navigate("/");
     },
     onError: (err: Error) => {
       setError(err.message);

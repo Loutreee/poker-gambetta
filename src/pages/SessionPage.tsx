@@ -26,7 +26,7 @@ export default function SessionPage() {
   const players = useMemo(
     () =>
       users.filter(
-        (u) => u.role === "player" || (me && u.id === me.id),
+        (u) => u.role === "player" || u.role === "admin" || (me && u.id === me.id),
       ),
     [users, me],
   );

@@ -21,9 +21,9 @@ function defaultPassword(name: string): string {
  * Liste des joueurs : nom, rôle (dealer = Hugo uniquement), solde initial en $.
  * Solde à 0 = pas d'entrée ledger (nouveau ou pas encore de bankroll).
  */
-const BANKROLL_DATA: { name: string; role: "player" | "dealer"; balance: number }[] = [
+const BANKROLL_DATA: { name: string; role: "player" | "dealer" | "admin"; balance: number }[] = [
   { name: "Eliott", role: "player", balance: 31_600 },
-  { name: "Killian", role: "player", balance: 34_125 },
+  { name: "Killian", role: "admin", balance: 34_125 },
   { name: "Camille", role: "player", balance: 20_975 },
   { name: "Arthur C.", role: "player", balance: 21_375 },
   { name: "Mimo", role: "player", balance: 24_000 },

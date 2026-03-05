@@ -271,8 +271,93 @@ a {
   padding: 6px 0;
 }
 
+.layout-nav-link {
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  color: #444;
+  font-weight: 500;
+}
+
+.layout-nav-link-active {
+  border-bottom-color: #111;
+  color: #111;
+}
+
 .layout-logo {
   font-weight: 800;
+}
+
+/* Burger : caché par défaut (grand écran) */
+.layout-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  background: #f5f5f6;
+  border: 1px solid #e0e1e6;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.layout-burger-line {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: #222;
+  border-radius: 1px;
+}
+.layout-nav-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 98;
+}
+.layout-nav-mobile {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 16px 20px;
+  gap: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  z-index: 99;
+  border-radius: 0 0 16px 16px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .layout-burger {
+    display: flex;
+  }
+  .layout-nav-desktop {
+    display: none !important;
+  }
+  .layout-nav-mobile {
+    display: flex;
+  }
+  .layout-actions-logout {
+    display: none !important;
+  }
+}
+.layout-nav-mobile-logout {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  width: 100%;
+  justify-content: center;
+}
+@media (min-width: 901px) {
+  .layout-nav-mobile-overlay,
+  .layout-nav-mobile {
+    display: none !important;
+  }
 }
 
 .layout-actions {
@@ -280,6 +365,15 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+}
+
+.layout-actions a.badge.layout-badge {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.layout-actions a.badge.layout-badge:hover {
+  background: #f0f0f2;
 }
 
 .layout-main {
@@ -302,6 +396,140 @@ a {
 
 .btn-icon-danger:hover {
   background: #ffe3ea;
+}
+
+/* Profil : avatar */
+.profile-avatar-wrap {
+  flex-shrink: 0;
+}
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.profile-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6e7eb;
+  color: #555;
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+/* Tooltip nom joueur (lien profil) */
+/* Zone de survol = largeur du prénom uniquement (fit-content), pas toute la cellule */
+.player-name-tooltip {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  max-width: max-content;
+  vertical-align: baseline;
+}
+.player-name-tooltip-trigger {
+  display: inline;
+}
+/* Petit pont à gauche du tooltip (entre le nom et la carte) pour garder le survol en s’y rendant */
+.player-name-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: -20px;
+  bottom: -20px;
+  width: 16px;
+  z-index: 19;
+}
+.player-name-tooltip .player-name-tooltip-content {
+  visibility: hidden;
+  position: absolute;
+  z-index: 20;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(10px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 240px;
+  max-width: 320px;
+  background: #fff;
+  color: #111;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e6e7eb;
+  opacity: 0;
+  transition: opacity 0.2s, visibility 0.2s, transform 0.15s;
+  pointer-events: none;
+}
+.player-name-tooltip:hover .player-name-tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(-50%) translateX(10px);
+  pointer-events: auto;
+}
+.player-name-tooltip .player-name-tooltip-content a {
+  color: #0a7a2f;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.player-name-tooltip .player-name-tooltip-content a:hover {
+  text-decoration: underline;
+}
+.player-name-tooltip-avatar {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e8e9ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-name-tooltip-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.player-name-tooltip-initial {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #555;
+}
+.player-name-tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.player-name-tooltip-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-name-tooltip-meta {
+  font-size: 0.8rem;
+  color: #666;
+}
+.player-name-tooltip-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin: 8px 0 4px;
+  padding: 8px 0;
+  border-top: 1px solid #eee;
+}
+.player-name-tooltip-badges-placeholder {
+  font-size: 0.75rem;
+  color: #999;
+  font-style: italic;
 }
 
 /* ---------- Mobile / portable ---------- */
@@ -403,6 +631,10 @@ a {
     -webkit-overflow-scrolling: auto;
   }
 
+  .card-home-top3 {
+    overflow-y: hidden;
+  }
+
   h1, h2, h3, h4 {
     word-break: break-word;
   }
@@ -426,6 +658,25 @@ a {
   .table td {
     padding: 8px 4px;
     font-size: 0.85rem;
+  }
+}
+
+/* Citations : fondu au changement */
+.quote-slider-box {
+  display: flex;
+  align-items: center;
+}
+.quote-slider-fade {
+  display: block;
+  width: 100%;
+  animation: quoteFadeIn 0.5s ease forwards;
+}
+@keyframes quoteFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

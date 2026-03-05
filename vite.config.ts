@@ -11,6 +11,10 @@ export default defineConfig({
         changeOrigin: true,
         timeout: 60000, // 60s pour les requêtes longues (ex: clôture session)
       },
+      '/uploads': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -24,6 +24,8 @@ async function fetchApi<T>(
 }
 
 export type User = { id: string; name: string; role: string };
+export type UserProfile = User & { avatarUrl: string | null; bio: string | null };
+export type BalanceHistoryPoint = { date: string; balance: number; sessionId: string; sessionName: string | null };
 export type LedgerEntry = {
   id: string;
   userId: string;
@@ -78,7 +80,40 @@ export const api = {
     return fetchApi("/users");
   },
 
-  getLeaderboard(): Promise<(User & { balance: number; balanceDeltaWeek: number; rankChange: number })[]> {
+  getProfile(userId: string): Promise<{ user: UserProfile; balance: number }> {
+    return fetchApi(`/users/${userId}/profile`);
+  },
+
+  updateMyProfile(data: { name?: string; avatarUrl?: string | null; bio?: string | null }): Promise<{ user: UserProfile }> {
+    return fetchApi("/users/me/profile", { method: "PATCH", json: data });
+  },
+
+  /** Envoie une photo de profil (data URL base64, ex. depuis un input file). */
+  uploadAvatar(imageDataUrl: string): Promise<{ user: UserProfile; avatarUrl: string }> {
+    return fetchApi("/users/me/avatar", { method: "POST", json: { image: imageDataUrl } });
+  },
+
+  getBalanceHistory(userId: string): Promise<{ points: BalanceHistoryPoint[] }> {
+    return fetchApi(`/users/balance-history/${userId}`);
+  },
+
+  // Admin
+  getAdminUsers(): Promise<{ users: User[] }> {
+    return fetchApi("/admin/users");
+  },
+
+  createUser(params: { name: string; role: string; password: string }): Promise<{ user: User }> {
+    return fetchApi("/admin/users", { method: "POST", json: params });
+  },
+
+  updateUser(
+    userId: string,
+    data: { name?: string; role?: string; password?: string },
+  ): Promise<{ user: User }> {
+    return fetchApi(`/admin/users/${userId}`, { method: "PATCH", json: data });
+  },
+
+  getLeaderboard(): Promise<(User & { avatarUrl: string | null; balance: number; balanceDeltaWeek: number; rankChange: number })[]> {
     return fetchApi("/users/leaderboard");
   },
 

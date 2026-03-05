@@ -47,11 +47,11 @@ export async function authMiddleware(
   next();
 }
 
-export function requireRole(role: "dealer") {
+export function requireRole(role: "dealer" | "admin") {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as Request & { user: { role: string } }).user;
     if (user.role !== role) {
-      res.status(403).json({ error: "Accès réservé au croupier" });
+      res.status(403).json({ error: "Accès réservé" });
       return;
     }
     next();

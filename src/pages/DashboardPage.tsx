@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import PlayerNameWithTooltip from "../components/PlayerNameWithTooltip";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
@@ -154,7 +155,16 @@ export default function DashboardPage() {
                     <span className={rankClassName}>{rank}</span>
                   </td>
                   <td>
-                    <span className={rank === 1 ? "first-player-name" : undefined}>{u.name}</span>
+                    <PlayerNameWithTooltip
+                      userId={u.id}
+                      name={u.name}
+                      avatarUrl={u.avatarUrl}
+                      rank={rank}
+                      balance={u.balance}
+                      className={rank === 1 ? "first-player-name" : undefined}
+                    >
+                      <span className={rank === 1 ? "first-player-name" : undefined}>{u.name}</span>
+                    </PlayerNameWithTooltip>
                     {rank === 1 && (
                       <span className="crown-icon" aria-hidden>
                         👑
