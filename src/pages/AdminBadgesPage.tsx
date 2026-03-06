@@ -97,7 +97,7 @@ export default function AdminBadgesPage() {
                 {cat.badgeIds.map((badgeId) => {
                   const fullConfig = getBadgeConfig(badgeId, config[badgeId]);
                   if (!fullConfig) return null;
-                  const { name, description, bgColor, iconColor, Icon } = fullConfig;
+                  const { name, bgColor, iconColor, Icon } = fullConfig;
                   return (
                     <div key={badgeId} className="admin-badge-item admin-badge-item--editable">
                       <div
