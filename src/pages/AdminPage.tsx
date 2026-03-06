@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWebHaptics } from "web-haptics/react";
@@ -125,7 +126,19 @@ export default function AdminPage() {
   return (
     <div className="grid grid-2">
       <div className="card" style={{ gridColumn: "1 / -1" }}>
-        <h2 style={{ marginTop: 0 }}>Admin – Utilisateurs</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Admin – Utilisateurs</h2>
+          {currentUser.role === "admin" && (
+            <Link
+              to="/admin/badges"
+              className="btn secondary"
+              style={{ fontSize: "0.9rem" }}
+              onClick={() => trigger("nudge")}
+            >
+              Voir les badges
+            </Link>
+          )}
+        </div>
         <p style={{ marginTop: 4, color: "#444" }}>
           Crée de nouveaux comptes, ajuste les rôles (joueur, croupier, admin) et
           réinitialise les mots de passe si besoin.

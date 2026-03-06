@@ -10,6 +10,7 @@ import DealerPage from "./pages/DealerPage";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminPage from "./pages/AdminPage";
+import AdminBadgesPage from "./pages/AdminBadgesPage";
 import PokerHandsPage from "./pages/PokerHandsPage";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -106,6 +107,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/badges"
+          element={
+            <ProtectedRoute>
+              <AdminBadgesPage />
             </ProtectedRoute>
           }
         />

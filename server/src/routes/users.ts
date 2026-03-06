@@ -3,6 +3,7 @@ import path from "path";
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../auth.js";
+import { computeUserBadges } from "../badges.js";
 
 const prisma = new PrismaClient();
 
@@ -72,27 +73,32 @@ usersRouter.get("/leaderboard", authMiddleware, async (_req, res) => {
     rankWeekAgoByUserId[u.id] = idx + 1;
   });
 
-  const leaderboard = sortedNow
-    // Ne pas afficher les joueurs qui ont 0 $ ET aucune activité (aucune entrée / session)
-    .filter((u) => {
-      const hasActivity =
-        usersWithLedgerEntries.has(u.id) || usersWithSessionEntries.has(u.id);
-      return hasActivity || u.balance !== 0;
-    })
-    .map((u, idx) => ({
-      id: u.id,
-      name: u.name,
-      role: u.role,
-      avatarUrl: u.avatarUrl ?? null,
-      balance: u.balance,
-      balanceDeltaWeek: u.balance - u.balanceWeekAgo,
-      rankChange:
-        rankWeekAgoByUserId[u.id] != null
-          ? idx + 1 - rankWeekAgoByUserId[u.id]!
-          : 0,
-    }));
+  const filtered = sortedNow.filter((u) => {
+    const hasActivity =
+      usersWithLedgerEntries.has(u.id) || usersWithSessionEntries.has(u.id);
+    return hasActivity || u.balance !== 0;
+  });
 
-  res.json(leaderboard);
+  const leaderboardWithBadges = await Promise.all(
+    filtered.map(async (u, idx) => {
+      const badges = await computeUserBadges(prisma, u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        role: u.role,
+        avatarUrl: u.avatarUrl ?? null,
+        balance: u.balance,
+        balanceDeltaWeek: u.balance - u.balanceWeekAgo,
+        rankChange:
+          rankWeekAgoByUserId[u.id] != null
+            ? idx + 1 - rankWeekAgoByUserId[u.id]!
+            : 0,
+        badges,
+      };
+    }),
+  );
+
+  res.json(leaderboardWithBadges);
 });
 
 function param(req: { params: Record<string, string | string[] | undefined> }, key: string): string {
@@ -170,6 +176,17 @@ async function getCurrentBalance(userId: string): Promise<number> {
   return entries.reduce((sum, e) => sum + e.amount, 0);
 }
 
+// Badges d'un utilisateur (rétroactifs)
+usersRouter.get("/:userId/badges", authMiddleware, async (req, res) => {
+  const userId = param(req, "userId");
+  if (!userId) {
+    res.status(400).json({ error: "userId requis" });
+    return;
+  }
+  const badges = await computeUserBadges(prisma, userId);
+  res.json({ badges });
+});
+
 // Profil public (avatar, bio, solde actuel) — connecté
 usersRouter.get("/:userId/profile", authMiddleware, async (req, res) => {
   const userId = param(req, "userId");
@@ -181,10 +198,14 @@ usersRouter.get("/:userId/profile", authMiddleware, async (req, res) => {
     res.status(404).json({ error: "Utilisateur introuvable." });
     return;
   }
-  const balance = await getCurrentBalance(userId);
+  const [balance, badges] = await Promise.all([
+    getCurrentBalance(userId),
+    computeUserBadges(prisma, userId),
+  ]);
   res.json({
     user: { ...user, avatarUrl: user.avatarUrl ?? null, bio: user.bio ?? null },
     balance,
+    badges,
   });
 });
 

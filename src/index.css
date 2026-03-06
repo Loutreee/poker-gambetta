@@ -532,6 +532,122 @@ a {
   font-style: italic;
 }
 
+/* Badges sur le profil et dans les tooltips */
+.profile-badge {
+  --badge-bg: #555;
+  --badge-icon-color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+.profile-badge:hover,
+.profile-badge:focus-within {
+  z-index: 9999;
+}
+.profile-badge-circle {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--badge-bg);
+  color: var(--badge-icon-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.profile-badge:hover .profile-badge-circle {
+  transform: scale(1.06);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+.profile-badge-circle-icon {
+  color: var(--badge-icon-color);
+}
+.profile-badge-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  border-radius: 8px;
+  white-space: normal;
+  width: max(160px, 100%);
+  max-width: 220px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-weight: normal;
+}
+.profile-badge-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top-color: #1a1a1a;
+}
+.profile-badge:hover .profile-badge-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+.profile-badge-tooltip-sep {
+  font-weight: normal;
+}
+.profile-badge-tooltip-desc {
+  display: block;
+  margin-top: 4px;
+  font-weight: normal;
+}
+.profile-badge--small .profile-badge-circle {
+  width: 28px;
+  height: 28px;
+}
+.profile-badge--small .profile-badge-tooltip {
+  font-size: 0.75rem;
+  max-width: 180px;
+  padding: 6px 10px;
+}
+/* Card badges : overflow visible pour que les tooltips ne soient pas coupés, z-index < burger (98/99) */
+.profile-badges-card {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f9f9fb;
+  border: 1px dashed #e0e1e6;
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+}
+@media (max-width: 768px) {
+  .profile-badges-card {
+    overflow: visible !important;
+  }
+}
+
+.profile-badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 10px;
+  align-items: center;
+}
+.profile-badges-list:empty::before {
+  content: "Aucun badge pour l’instant.";
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
 /* ---------- Mobile / portable ---------- */
 @media (max-width: 768px) {
   :root {
@@ -659,6 +775,165 @@ a {
     padding: 8px 4px;
     font-size: 0.85rem;
   }
+}
+
+/* Admin – Référentiel des badges */
+.admin-badges-page {
+  padding-bottom: 24px;
+}
+.admin-badges-header {
+  margin-bottom: 28px;
+}
+.admin-badges-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.admin-badges-category {
+  --cat-color: #555;
+}
+.admin-badges-category-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--cat-color);
+}
+.admin-badges-category-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cat-color);
+}
+.admin-badges-category-note {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+.admin-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 20px 16px;
+  justify-items: center;
+}
+@media (max-width: 400px) {
+  .admin-badges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 16px 12px;
+  }
+}
+
+/* Badge = cercle coloré + icône, titre en dessous, description au survol */
+.admin-badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 100px;
+  text-align: center;
+}
+.admin-badge-circle {
+  --badge-color: #555;
+  --badge-icon-color: #fff;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--badge-color);
+  color: var(--badge-icon-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.admin-badge-circle:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.admin-badge-circle-icon {
+  color: var(--badge-icon-color);
+  flex-shrink: 0;
+}
+.admin-badge-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  border-radius: 8px;
+  white-space: normal;
+  width: max(180px, 100%);
+  max-width: 220px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.admin-badge-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top-color: #1a1a1a;
+}
+.admin-badge-circle:hover .admin-badge-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+.admin-badge-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.admin-badges-grid--editable {
+  align-items: flex-start;
+}
+.admin-badge-item--editable {
+  max-width: 140px;
+}
+.admin-badge-edit-btn {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+}
+
+.admin-badge-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+.admin-badge-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  min-width: min(90vw, 400px);
+  max-width: 480px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+.admin-badge-form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
 }
 
 /* Citations : fondu au changement */

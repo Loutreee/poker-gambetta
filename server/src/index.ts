@@ -13,6 +13,7 @@ import { usersRouter } from "./routes/users.js";
 import { ledgerRouter } from "./routes/ledger.js";
 import { sessionRouter } from "./routes/session.js";
 import { adminRouter } from "./routes/admin.js";
+import { badgesRouter } from "./routes/badges.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -30,6 +31,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/ledger", ledgerRouter);
 app.use("/api/session", sessionRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/badges", badgesRouter);
 
 // Fichiers uploadés (avatars)
 const uploadsPath = path.join(process.cwd(), "uploads");

@@ -47,7 +47,9 @@ export default function SettingsPage() {
     mutationFn: (data: { name?: string; bio?: string | null }) => api.updateMyProfile(data),
     onSuccess: (data) => {
       toast.success("Profil mis à jour.");
-      queryClient.setQueryData(["profile", me?.id], { user: data.user, balance: profileData?.balance ?? 0 });
+      queryClient.setQueryData(["profile", me?.id], (prev: { user: unknown; balance?: number; badges?: unknown[] } | undefined) =>
+        prev ? { ...prev, user: data.user } : { user: data.user, balance: profileData?.balance ?? 0, badges: profileData?.badges ?? [] },
+      );
     },
     onError: (err: Error) => toast.error(err.message),
   });

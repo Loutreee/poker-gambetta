@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { useWebHaptics } from "web-haptics/react";
 import { api } from "../lib/api";
+import BadgeDisplay from "../components/BadgeDisplay";
 
 const MAX_AVATAR_SIZE_MB = 20;
 
@@ -65,7 +66,9 @@ export default function ProfilePage() {
     mutationFn: (data: { bio?: string | null }) => api.updateMyProfile(data),
     onSuccess: (data) => {
       toast.success("Profil mis à jour.");
-      queryClient.setQueryData(["profile", userId], { user: data.user });
+      queryClient.setQueryData(["profile", userId], (prev: { user: unknown; balance?: number; badges?: unknown[] } | undefined) =>
+        prev ? { ...prev, user: data.user } : { user: data.user },
+      );
       setEditingBio(false);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -75,7 +78,7 @@ export default function ProfilePage() {
     mutationFn: (imageDataUrl: string) => api.uploadAvatar(imageDataUrl),
     onSuccess: (data) => {
       toast.success("Photo de profil enregistrée.");
-      queryClient.setQueryData(["profile", userId], (prev: { user: typeof data.user; balance?: number } | undefined) =>
+      queryClient.setQueryData(["profile", userId], (prev: { user: typeof data.user; balance?: number; badges?: unknown[] } | undefined) =>
         prev ? { ...prev, user: data.user } : undefined,
       );
       queryClient.invalidateQueries({ queryKey: ["me"] });
@@ -221,11 +224,17 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="card" style={{ marginTop: 16, padding: 12, background: "#f9f9fb", border: "1px dashed #e0e1e6" }}>
-          <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: "0.95rem" }}>Badges (haut faits)</h3>
-          <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
-            Placeholder — les badges pour récompenser les hauts faits arriveront bientôt.
-          </p>
+        <div className="card profile-badges-card">
+          <h3 style={{ marginTop: 0, marginBottom: 10, fontSize: "0.95rem" }}>Badges (haut faits)</h3>
+          <div className="profile-badges-list">
+            {(profileData?.badges ?? []).length === 0 ? (
+              <span style={{ fontSize: "0.85rem", color: "#666", fontStyle: "italic" }}>Aucun badge pour l’instant.</span>
+            ) : (
+              (profileData?.badges ?? []).map((b) => (
+                <BadgeDisplay key={b.badgeId} badge={b} size="normal" showCount />
+              ))
+            )}
+          </div>
         </div>
 
         <section style={{ marginTop: 24 }}>

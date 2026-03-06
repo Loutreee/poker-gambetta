@@ -161,6 +161,7 @@ export default function DashboardPage() {
                       avatarUrl={u.avatarUrl}
                       rank={rank}
                       balance={u.balance}
+                      badges={u.badges ?? []}
                       className={rank === 1 ? "first-player-name" : undefined}
                     >
                       <span className={rank === 1 ? "first-player-name" : undefined}>{u.name}</span>

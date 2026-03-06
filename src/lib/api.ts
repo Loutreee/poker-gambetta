@@ -25,6 +25,7 @@ async function fetchApi<T>(
 
 export type User = { id: string; name: string; role: string };
 export type UserProfile = User & { avatarUrl: string | null; bio: string | null };
+export type UserBadge = { badgeId: string; count: number };
 export type BalanceHistoryPoint = { date: string; balance: number; sessionId: string; sessionName: string | null };
 export type LedgerEntry = {
   id: string;
@@ -80,7 +81,7 @@ export const api = {
     return fetchApi("/users");
   },
 
-  getProfile(userId: string): Promise<{ user: UserProfile; balance: number }> {
+  getProfile(userId: string): Promise<{ user: UserProfile; balance: number; badges: UserBadge[] }> {
     return fetchApi(`/users/${userId}/profile`);
   },
 
@@ -95,6 +96,17 @@ export const api = {
 
   getBalanceHistory(userId: string): Promise<{ points: BalanceHistoryPoint[] }> {
     return fetchApi(`/users/balance-history/${userId}`);
+  },
+
+  getBadgesConfig(): Promise<Record<string, { name: string; description: string; bgColor: string; iconColor: string }>> {
+    return fetchApi("/badges/config");
+  },
+
+  updateBadge(
+    badgeId: string,
+    data: { name?: string; description?: string; bgColor?: string; iconColor?: string },
+  ): Promise<{ badgeId: string; name: string | null; description: string | null; bgColor: string | null; iconColor: string | null }> {
+    return fetchApi(`/admin/badges/${encodeURIComponent(badgeId)}`, { method: "PATCH", json: data });
   },
 
   // Admin
@@ -113,7 +125,7 @@ export const api = {
     return fetchApi(`/admin/users/${userId}`, { method: "PATCH", json: data });
   },
 
-  getLeaderboard(): Promise<(User & { avatarUrl: string | null; balance: number; balanceDeltaWeek: number; rankChange: number })[]> {
+  getLeaderboard(): Promise<(User & { avatarUrl: string | null; balance: number; balanceDeltaWeek: number; rankChange: number; badges: UserBadge[] })[]> {
     return fetchApi("/users/leaderboard");
   },
 

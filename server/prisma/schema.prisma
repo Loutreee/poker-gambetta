@@ -70,3 +70,15 @@ model SessionEntry {
   @@map("session_entries")
 }
 
+model BadgeOverride {
+  id          String   @id @default(cuid())
+  badgeId     String   @unique @map("badge_id")
+  name        String?  @map("name")
+  description String?  @map("description")
+  bgColor     String?  @map("bg_color")
+  iconColor   String?  @map("icon_color")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("badge_overrides")
+}
+

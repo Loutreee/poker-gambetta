@@ -106,3 +106,36 @@ adminRouter.patch("/users/:userId", async (req, res) => {
   res.json({ user });
 });
 
+// Badges : modification titre / description / couleurs (admin uniquement)
+adminRouter.patch("/badges/:badgeId", async (req, res) => {
+  const user = (req as { user?: { role?: string } }).user;
+  if (user?.role !== "admin") {
+    res.status(403).json({ error: "Réservé aux administrateurs." });
+    return;
+  }
+  const badgeId = (req.params.badgeId ?? "").trim();
+  if (!badgeId) {
+    res.status(400).json({ error: "badgeId requis." });
+    return;
+  }
+  const { name, description, bgColor, iconColor } = req.body as {
+    name?: string;
+    description?: string;
+    bgColor?: string;
+    iconColor?: string;
+  };
+  const data: { name?: string | null; description?: string | null; bgColor?: string | null; iconColor?: string | null } = {};
+  if (name !== undefined) data.name = typeof name === "string" ? name.trim() || null : null;
+  if (description !== undefined) data.description = typeof description === "string" ? description.trim() || null : null;
+  if (bgColor !== undefined) data.bgColor = typeof bgColor === "string" && /^#[0-9A-Fa-f]{3,8}$/.test(bgColor.trim()) ? bgColor.trim() : null;
+  if (iconColor !== undefined) data.iconColor = typeof iconColor === "string" && /^#[0-9A-Fa-f]{3,8}$/.test(iconColor.trim()) ? iconColor.trim() : null;
+
+  const updated = await prisma.badgeOverride.upsert({
+    where: { badgeId },
+    create: { badgeId, name: data.name ?? undefined, description: data.description ?? undefined, bgColor: data.bgColor ?? undefined, iconColor: data.iconColor ?? undefined },
+    update: { name: data.name, description: data.description, bgColor: data.bgColor, iconColor: data.iconColor },
+    select: { badgeId: true, name: true, description: true, bgColor: true, iconColor: true },
+  });
+  res.json(updated);
+});
+

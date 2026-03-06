@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import type { UserBadge } from "../lib/api";
+import BadgeDisplay from "./BadgeDisplay";
 
 type Props = {
   userId: string;
@@ -6,6 +8,7 @@ type Props = {
   avatarUrl?: string | null;
   rank?: number;
   balance?: number;
+  badges?: UserBadge[];
   className?: string;
   children?: React.ReactNode;
 };
@@ -16,6 +19,7 @@ export default function PlayerNameWithTooltip({
   avatarUrl,
   rank,
   balance,
+  badges = [],
   className,
   children,
 }: Props) {
@@ -40,7 +44,13 @@ export default function PlayerNameWithTooltip({
             </span>
           )}
           <span className="player-name-tooltip-badges" aria-hidden>
-            <span className="player-name-tooltip-badges-placeholder">Badges à venir</span>
+            {badges.length === 0 ? (
+              <span className="player-name-tooltip-badges-placeholder">Aucun badge</span>
+            ) : (
+              badges.map((b) => (
+                <BadgeDisplay key={b.badgeId} badge={b} size="small" showCount />
+              ))
+            )}
           </span>
           <Link to={`/profile/${userId}`}>Voir le profil</Link>
         </span>
