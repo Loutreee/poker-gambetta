@@ -4,12 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:poker": "cross-env VITE_PROXY_TARGET=http://localhost:3001 npm run dev --prefix apps/poker-gambetta",
+    "dev:betting": "cross-env VITE_PROXY_TARGET=http://localhost:3001 npm run dev --prefix apps/betting-gambetta",
     "dev:server": "cd server && npm run dev",
-    "dev:all": "concurrently -n api,web -c blue,green \"cross-env PORT=3001 npm run dev --prefix server\" \"cross-env VITE_PROXY_TARGET=http://localhost:3001 npm run dev\"",
-    "build": "tsc -b && vite build",
+    "dev:db": "node scripts/ensure-db.cjs",
+    "dev:all": "npm run dev:db && concurrently -n api,poker,betting -c blue,green,magenta --kill-others \"cross-env PORT=3001 npm run dev --prefix server\" \"npm run dev:poker\" \"npm run dev:betting\"",
+    "build:poker": "npm run build --prefix apps/poker-gambetta",
+    "build:betting": "npm run build --prefix apps/betting-gambetta",
+    "build": "npm run build:poker && npm run build:betting && cd server && npm run build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview:poker": "npm run preview --prefix apps/poker-gambetta",
+    "preview:betting": "npm run preview --prefix apps/betting-gambetta"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",

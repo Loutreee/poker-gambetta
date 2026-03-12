@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { api } from "../lib/api";
+import { getMatchCalendarUrl } from "../lib/calendar";
 import PlayerNameWithTooltip from "../components/PlayerNameWithTooltip";
 
 function formatAmount(amount: number): string {
@@ -23,7 +24,14 @@ export default function HomePage() {
     enabled: !!user,
   });
 
+  const { data: nextMatchData } = useQuery({
+    queryKey: ["betting-next-match"],
+    queryFn: () => api.getNextBettingMatch(),
+  });
+
+  const nextMatch = nextMatchData?.match ?? null;
   const top3 = leaderboard.slice(0, 3);
+  const bettingAppUrl = import.meta.env.VITE_BETTING_APP_URL ?? "http://localhost:5174";
   const [particlesReady, setParticlesReady] = useState(false);
 
   useEffect(() => {
@@ -68,6 +76,49 @@ export default function HomePage() {
           </p>
         )}
       </div>
+
+      {nextMatch && nextMatch.status === "upcoming" && (
+        <div className="card card-betting-promo" style={{ gridColumn: "1 / -1" }}>
+          <div className="card-betting-promo-inner">
+            <span className="card-betting-promo-label">Match à venir</span>
+            <h3 className="card-betting-promo-title">
+              Un match ArcMonkey est programmé
+            </h3>
+            <p className="card-betting-promo-vs">
+              <strong>ArcMonkey</strong> vs <strong>{nextMatch.opponent}</strong>
+              {nextMatch.format && (
+                <span className="card-betting-promo-format"> ({nextMatch.format})</span>
+              )}
+            </p>
+            <p className="card-betting-promo-date">
+              {new Date(nextMatch.scheduledAt).toLocaleString("fr-FR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+            <p style={{ marginBottom: 12 }}>
+              <a
+                href={getMatchCalendarUrl(nextMatch)}
+                download="match-arcmonkey.ics"
+                style={{ fontSize: "0.9rem", color: "#7c3aed" }}
+              >
+                Ajouter au calendrier
+              </a>
+            </p>
+            <a
+              href={bettingAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="card-betting-promo-btn"
+            >
+              Aller sur le site Betting
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="card card-no-scroll-x card-home-top3">
         <h3 style={{ marginTop: 0 }}>Top 3 joueurs</h3>
@@ -210,6 +261,7 @@ function QuotesSlider() {
     "« En vrai quand t'y penses c'est un truc de fou que l'Empire Romain se soit effondré » - Marvin",
     "« Je suis humble face à la vie » - Lou",
     "« C'est à cause de propos comme ça qu'il veut pas qu'on sorte avec sa sœur » - Lou",
+    "« Bro is not fooling anyone » - Thomas",
   ];
   const [quoteIndex, setQuoteIndex] = useState(0);
 

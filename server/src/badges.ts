@@ -27,13 +27,15 @@ export const BADGE_IDS = {
   BANKROLL_WHALE: "bankroll_whale",
   RECORD_BEST_SESSION: "record_best_session",
   RECORD_SERIE_NOIRE: "record_serie_noire",
+  /** Parier sur la défaite d'ArcMonkey et gagner. */
+  SPECIAL_EUH_MEC: "special_euh_mec",
 } as const;
 
 
 export async function computeUserBadges(prisma: PrismaClient, userId: string): Promise<UserBadge[]> {
   const result: UserBadge[] = [];
 
-  const [closedSessions, myEntries, allEntriesBySession, ledgerSum, allBalances] = await Promise.all([
+  const [closedSessions, myEntries, allEntriesBySession, ledgerSum, allBalances, wonVictoryLossBets] = await Promise.all([
     prisma.session.findMany({
       where: { status: "closed", closedAt: { not: null } },
       orderBy: { closedAt: "asc" },
@@ -55,6 +57,11 @@ export async function computeUserBadges(prisma: PrismaClient, userId: string): P
       by: ["userId"],
       _sum: { amount: true },
     }).then((groups) => new Map(groups.map((g) => [g.userId, g._sum.amount ?? 0]))),
+    // Badge "Euuh mec ?" : avoir gagné au moins un pari VICTORY sur la défaite d'ArcMonkey (outcome "loss")
+    prisma.bet.findMany({
+      where: { userId, betType: "VICTORY", status: "WON" },
+      select: { payload: true },
+    }),
   ]);
 
   const mySessionIds = new Set(myEntries.map((e) => e.sessionId));
@@ -144,6 +151,14 @@ export async function computeUserBadges(prisma: PrismaClient, userId: string): P
   }
   if (bestSessionNet >= globalBestSessionNet && globalBestSessionNet > 0) {
     result.push({ badgeId: BADGE_IDS.RECORD_BEST_SESSION, count: 1 });
+  }
+
+  // Spécial : avoir gagné un pari sur la défaite d'ArcMonkey (payload.outcome === "loss")
+  const hasWonVictoryLossBet = wonVictoryLossBets.some(
+    (b) => (b.payload as Record<string, unknown>)?.outcome === "loss",
+  );
+  if (hasWonVictoryLossBet) {
+    result.push({ badgeId: BADGE_IDS.SPECIAL_EUH_MEC, count: 1 });
   }
 
   // Série noire : 3 soirées d'affilée sans gain (net <= 0)

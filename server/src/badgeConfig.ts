@@ -27,6 +27,7 @@ const DEFAULTS: Record<string, BadgeDisplay> = {
   [BADGE_IDS.BANKROLL_WHALE]: { name: "Whale", description: "Plus grosse bankroll du site", bgColor: "#6366f1", iconColor: "#e0e7ff" },
   [BADGE_IDS.RECORD_BEST_SESSION]: { name: "Ma question préférée", description: "Détenir le record de gain sur une soirée", bgColor: "#a855f7", iconColor: "#f5f3ff" },
   [BADGE_IDS.RECORD_SERIE_NOIRE]: { name: "Série noire", description: "3 soirées sans gain", bgColor: "#475569", iconColor: "#cbd5e1" },
+  [BADGE_IDS.SPECIAL_EUH_MEC]: { name: "Euuh mec ?", description: "Parier sur la défaite de ArcMonkey ... et gagner", bgColor: "#7c3aed", iconColor: "#ede9fe" },
 };
 
 const ALL_BADGE_IDS = Object.keys(DEFAULTS);

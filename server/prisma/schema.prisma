@@ -20,6 +20,8 @@ model User {
   entriesAsCreator LedgerEntry[] @relation("EntryCreator")
 
   sessionEntries   SessionEntry[]
+  arcMonkeyPlayer ArcMonkeyPlayer?
+  bets            Bet[]
 
   @@map("users")
 }
@@ -81,4 +83,66 @@ model BadgeOverride {
 
   @@map("badge_overrides")
 }
+
+model ArcMonkeyPlayer {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  steamProfileUrl  String?  @map("steam_profile_url")
+  steamDisplayName String?  @map("steam_display_name")
+  steamAvatarUrl   String?  @map("steam_avatar_url")
+  userId           String?  @unique @map("user_id")
+  active           Boolean  @default(true)
+
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  matchPlayers  MatchPlayer[]
+}
+
+model Match {
+  id          String   @id @default(cuid())
+  title       String?  // titre optionnel du match
+  opponent    String
+  format      String   @default("BO3") // "BO1" | "BO3" | "BO5"
+  scheduledAt DateTime @map("scheduled_at")
+  status      String   @default("upcoming") // "upcoming" | "finished" | "cancelled"
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Lien vers la salle de match (Faceit, ESEA, etc.) pour automatiser le règlement
+  faceitMatchUrl String? @map("faceit_match_url")
+
+  // Limites de mise (optionnel, 0 = pas de limite). Configurable en admin.
+  maxStakePerBet   Int? @map("max_stake_per_bet")   // plafond par pari
+  maxStakePerMatch Int? @map("max_stake_per_match") // plafond total par user sur ce match
+
+  players MatchPlayer[]
+  bets    Bet[]
+}
+
+model Bet {
+  id        String   @id @default(cuid())
+  matchId   String   @map("match_id")
+  userId    String   @map("user_id")
+  amount    Int      // mise en unités (même échelle que ledger)
+  betType   String   @map("bet_type") // "VICTORY" | "PLAYER_RANK" | "KILLS" | "ACE" | "EXACT_SCORE"
+  payload   Json     // données selon le type (outcome, playerId, rank, threshold, score…)
+  status    String   @default("PENDING") // "PENDING" | "WON" | "LOST" | "CANCELLED"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([userId])
+}
+
+model MatchPlayer {
+  id       String @id @default(cuid())
+  matchId  String @map("match_id")
+  playerId String @map("player_id")
+
+  match  Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player ArcMonkeyPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+}
+
 

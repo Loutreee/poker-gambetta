@@ -1,11 +1,23 @@
-# Stage 1: build frontend
+ARG APP_NAME=poker-gambetta
+
+# Stage 1: build frontend (paramétrable par APP_NAME)
+# Optionnel : VITE_BETTING_APP_URL (pour poker) et VITE_POKER_APP_URL (pour betting) en prod
 FROM node:20-bookworm-slim AS frontend
 WORKDIR /app
-COPY package.json package-lock.json ./
+ARG APP_NAME
+ARG VITE_BETTING_APP_URL
+ARG VITE_POKER_APP_URL
+ENV VITE_BETTING_APP_URL=$VITE_BETTING_APP_URL
+ENV VITE_POKER_APP_URL=$VITE_POKER_APP_URL
+COPY apps/${APP_NAME}/package.json apps/${APP_NAME}/package-lock.json ./
 RUN npm ci
-COPY index.html vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
-COPY src ./src
-COPY public ./public
+COPY apps/${APP_NAME}/index.html ./index.html
+COPY apps/${APP_NAME}/vite.config.ts ./vite.config.ts
+COPY apps/${APP_NAME}/tsconfig.json ./tsconfig.json
+COPY apps/${APP_NAME}/tsconfig.app.json ./tsconfig.app.json
+COPY apps/${APP_NAME}/tsconfig.node.json ./tsconfig.node.json
+COPY apps/${APP_NAME}/src ./src
+COPY apps/${APP_NAME}/public ./public
 RUN npm run build
 
 # Stage 2: build backend + runtime

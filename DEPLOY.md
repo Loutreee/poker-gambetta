@@ -1,220 +1,134 @@
-# Déploiement Poker Gambetta sur un VPS
+# Mise en production — Poker Gambetta & Betting Gambetta
 
-Guide pas à pas pour déployer l’app sur un VPS (Ubuntu/Debian) avec Docker, puis optionnellement Nginx + HTTPS.
+Ce document décrit ce qu’il faut mettre en place pour déployer ce monorepo en production. Il est destiné à l’équipe (ou au LLM) qui gère le déploiement.
 
----
+## Résumé du projet
 
-## 1. Connexion au VPS
+- **Deux applications web** qui partagent le **même backend** (Express + Prisma + PostgreSQL) et la **même base utilisateurs** :
+  - **Poker Gambetta** : classement, sessions, ledger, bankroll, badges.
+  - **Betting Gambetta** : paris sur les matchs CS ArcMonkey, règlement manuel ou automatique (API Faceit).
+- En production avec Docker, **chaque app est un conteneur distinct** : chaque conteneur embarque son front (Poker ou Betting) + une instance du même backend. Une **seule base PostgreSQL** est utilisée par les deux.
 
-Depuis ton PC :
+## Stack Docker
 
-```bash
-ssh ton_user@IP_DE_TON_VPS
-```
+- **docker-compose.yml** définit 3 services :
+  - **db** : PostgreSQL 16 (port 5432)
+  - **poker-app** : front Poker + backend (port 3000 en interne, exposé sur le port hôte configuré, ex. 3000)
+  - **betting-app** : front Betting + backend (port 3000 en interne, exposé sur le port hôte, ex. 3001)
 
-Exemple : `ssh root@51.68.xxx.xxx` ou `ssh ubuntu@51.68.xxx.xxx`
+Au démarrage de chaque app (poker-app et betting-app), l’**entrypoint** exécute :
+1. `npx prisma migrate deploy` (migrations DB)
+2. `node server/dist/seed.js` (seed ignoré si déjà fait)
+3. Démarrage du serveur Node qui sert le front en statique et l’API sous `/api`.
 
----
+## Ce qu’il faut mettre en place
 
-## 2. Installer Docker et Docker Compose
+### 1. Fichier `.env` à la racine du projet
 
-Si ce n’est pas déjà fait :
-
-```bash
-# Mise à jour
-sudo apt update && sudo apt upgrade -y
-
-# Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-
-# Docker Compose (plugin)
-sudo apt install -y docker-compose-plugin
-```
-
-Déconnecte-toi puis reconnecte-toi pour que le groupe `docker` soit pris en compte, ou lance les commandes suivantes avec `sudo`.
-
-Vérification :
-
-```bash
-docker --version
-docker compose version
-```
-
----
-
-## 3. Récupérer le projet sur le VPS
-
-### Option A : dépôt Git (recommandé)
-
-```bash
-cd ~
-git clone https://github.com/TON_USER/poker-gambetta.git
-cd poker-gambetta
-```
-
-Remplace par l’URL réelle de ton repo (GitHub, GitLab, etc.). Si le repo est privé, configure une clé SSH ou un token sur le VPS.
-
-### Option B : copie avec SCP depuis ton PC
-
-Sur ton **PC** (PowerShell) :
-
-```powershell
-scp -r C:\Users\OrdinateurKillian\Desktop\projet\poker-gambetta ton_user@IP_DU_VPS:~/poker-gambetta
-```
-
-Puis sur le VPS : `cd ~/poker-gambetta`.
-
----
-
-## 4. Configurer les variables d’environnement
-
-Sur le VPS, dans le dossier du projet :
-
-```bash
-cd ~/poker-gambetta   # ou le chemin où se trouve le projet
-
-# Créer le fichier .env
-nano .env
-```
-
-Contenu minimal (adapte l’URL si tu as un nom de domaine) :
+Créer un `.env` à côté de `docker-compose.yml` (voir `.env.docker.example` pour un modèle) avec au minimum :
 
 ```env
-# Obligatoire : clé secrète pour les tokens de connexion (génère une valeur aléatoire)
-JWT_SECRET=REMPLACE_PAR_UNE_LONGUE_CHAINE_ALEATOIRE
+# Obligatoire
+JWT_SECRET=<une-vraie-secret-long-et-aleatoire>
+CORS_ORIGIN=https://ton-domaine-poker.com,https://ton-domaine-betting.com
 
-# URL à laquelle tu accèderas à l’app (pour les cookies CORS)
-# Si tu accèdes via http://IP_DU_VPS:3000 → mets http://IP_DU_VPS:3000
-# Si tu as un domaine avec HTTPS → mets https://ton-domaine.com
-CORS_ORIGIN=http://IP_DE_TON_VPS:3000
+# URLs des apps (pour les liens croisés Poker ↔ Betting) — utilisées au BUILD
+VITE_BETTING_APP_URL=https://ton-domaine-betting.com
+VITE_POKER_APP_URL=https://ton-domaine-poker.com
+
+# Optionnel : règlement auto des paris depuis Faceit
+FACEIT_API_KEY=<cle-api-faceit>
+
+# Optionnel : avatars / pseudos Steam des joueurs ArcMonkey
+STEAM_API_KEY=<cle-api-steam>
 ```
 
-Pour générer un `JWT_SECRET` fort :
+- **JWT_SECRET** : secret partagé pour les cookies de session ; doit être le même pour les deux apps (même backend logique).
+- **CORS_ORIGIN** : origines autorisées (URLs finales des deux fronts), séparées par des virgules, sans espace superflu.
+- **VITE_BETTING_APP_URL** / **VITE_POKER_APP_URL** : injectées **au build** des images Docker (lien « Match programmé » sur Poker, onglet « Poker » sur Betting). Si omises, les builds utilisent des fallbacks localhost (à éviter en prod).
+- **FACEIT_API_KEY** : nécessaire uniquement si tu veux le règlement automatique des paris depuis Faceit (optionnel).
+- **STEAM_API_KEY** : optionnel, pour les avatars Steam sur la page Betting.
 
-```bash
-openssl rand -base64 32
-```
+### 2. Base de données
 
-Colle le résultat dans `JWT_SECRET=...`, sauvegarde (`Ctrl+O`, Entrée) et quitte (`Ctrl+X`).
+- Le service **db** utilise par défaut : `POSTGRES_USER=poker`, `POSTGRES_PASSWORD=poker`, `POSTGRES_DB=poker`.
+- Les apps utilisent `DATABASE_URL=postgresql://poker:poker@db:5432/poker` (déjà défini dans `docker-compose.yml`).
+- Si tu utilises une base gérée (ex. Postgres hébergé), remplace `DATABASE_URL` dans les blocs `environment` de `poker-app` et `betting-app` par l’URL réelle (et retire ou adapte le service `db` si tu n’en as pas besoin).
 
----
-
-## 5. Lancer l’application
-
-Toujours dans le dossier du projet :
+### 3. Build et lancement
 
 ```bash
 docker compose up -d --build
 ```
 
-- Premier lancement : le build peut prendre 2–5 minutes.
-- L’app écoute sur le port **3000**.
-- La base PostgreSQL est créée automatiquement (volume `postgres_data`).
-- Les migrations et le seed (joueurs + bankrolls) sont exécutés au démarrage.
+- **Premier déploiement** : les migrations s’exécutent au démarrage des conteneurs (entrypoint). Le seed peut être exécuté une fois (il est idempotent).
+- Pour que les liens inter-apps soient corrects en prod, **VITE_BETTING_APP_URL** et **VITE_POKER_APP_URL** doivent être définis dans le `.env` **avant** le `docker compose build` (ou `--build`), car ce sont des variables de **build**.
 
-Vérifier que tout tourne :
+### 4. Reverse proxy (Nginx / Caddy / Traefik)
 
-```bash
-docker compose ps
-docker compose logs -f app
-```
+En production, on expose en général les deux apps derrière un reverse proxy :
 
-Tu peux arrêter les logs avec `Ctrl+C`.
+- Une **entrée** (ex. `https://poker.example.com`) → proxy vers `poker-app:3000`.
+- Une **autre entrée** (ex. `https://betting.example.com`) → proxy vers `betting-app:3000` (mappé en interne sur le port du conteneur).
 
-Accès : ouvre **http://IP_DE_TON_VPS:3000** dans un navigateur. Connecte-toi avec un des comptes du seed (ex. Hugo / `hugo` pour le croupier).
+**CORS_ORIGIN** doit contenir exactement les URLs utilisées par le navigateur (ex. `https://poker.example.com,https://betting.example.com`).
 
----
-
-## 6. (Optionnel) HTTPS avec un nom de domaine
-
-Si tu as un **nom de domaine** qui pointe vers l’IP du VPS (ex. `poker.mondomaine.com`), tu peux mettre Nginx devant et activer HTTPS avec Let’s Encrypt.
-
-### 6.1 Installer Nginx et Certbot
-
-Sur le VPS :
-
-```bash
-sudo apt install -y nginx certbot python3-certbot-nginx
-```
-
-### 6.2 Configurer Nginx
-
-Crée un fichier de config (remplace `poker.mondomaine.com` par ton domaine) :
-
-```bash
-sudo nano /etc/nginx/sites-available/poker-gambetta
-```
-
-Colle ce contenu (en remplaçant le domaine) :
+Exemple Nginx (à adapter) :
 
 ```nginx
+# Poker
 server {
-    listen 80;
-    server_name poker.mondomaine.com;
+  server_name poker.example.com;
+  location / {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
 
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+# Betting
+server {
+  server_name betting.example.com;
+  location / {
+    proxy_pass http://localhost:3001;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
 }
 ```
 
-Active le site et recharge Nginx :
+(En Docker Swarm/Kubernetes, tu pointes vers les services correspondants au lieu de `localhost`.)
 
-```bash
-sudo ln -s /etc/nginx/sites-available/poker-gambetta /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
+### 5. Volumes
 
-### 6.3 Obtenir le certificat SSL
+- **postgres_data** : données PostgreSQL (si tu utilises le service `db`).
+- **uploads_data** : fichiers uploadés (avatars) partagés entre les deux apps ; à monter de la même façon sur les deux conteneurs si tu veux un stockage commun.
 
-```bash
-sudo certbot --nginx -d poker.mondomaine.com
-```
+### 6. Comptes et rôles
 
-Réponds aux questions (email, acceptation des conditions). Certbot va modifier la config Nginx pour écouter en HTTPS.
+- Après le seed : un compte **Killian** a les droits admin sur **Betting** (création de matchs, équipe ArcMonkey, règlement des paris). Les autres comptes sont définis dans le seed (voir `server`).
+- Les **badges** (dont le badge spécial « Euuh mec ? » pour avoir gagné un pari sur la défaite d’ArcMonkey) sont calculés côté backend à partir des données (sessions, paris, etc.) ; rien de plus à configurer.
 
-### 6.4 Mettre à jour le .env de l’app
+## Résumé des variables d’environnement
 
-Dans `~/poker-gambetta/.env` :
+| Variable | Où | Obligatoire | Description |
+|----------|-----|-------------|-------------|
+| `JWT_SECRET` | runtime (compose) | Oui | Secret JWT des cookies de session. |
+| `CORS_ORIGIN` | runtime (compose) | Oui | Origines autorisées (URLs des deux fronts), séparées par des virgules. |
+| `VITE_BETTING_APP_URL` | build (compose build args) | Recommandé en prod | URL du site Betting (pour le front Poker). |
+| `VITE_POKER_APP_URL` | build (compose build args) | Recommandé en prod | URL du site Poker (pour le front Betting). |
+| `DATABASE_URL` | runtime (compose) | Oui (ou via db) | URL PostgreSQL. Déjà définie pour le cas « db » dans le compose. |
+| `FACEIT_API_KEY` | runtime (compose) | Non | Règlement automatique des paris depuis Faceit. |
+| `STEAM_API_KEY` | runtime (compose) | Non | Avatars / pseudos Steam (Betting). |
 
-```env
-JWT_SECRET=ta_cle_generee_avant
-CORS_ORIGIN=https://poker.mondomaine.com
-```
+## Vérification rapide
 
-Puis redémarre l’app :
-
-```bash
-cd ~/poker-gambetta
-docker compose up -d
-```
-
-Tu peux maintenant utiliser **https://poker.mondomaine.com**.
-
----
-
-## Commandes utiles
-
-| Action | Commande |
-|--------|----------|
-| Voir les logs de l’app | `docker compose logs -f app` |
-| Arrêter l’app | `docker compose down` |
-| Redémarrer après un `git pull` | `docker compose up -d --build` |
-| Rebuild complet (cache ignoré) | `docker compose build --no-cache && docker compose up -d` |
-
----
-
-## Dépannage
-
-- **Port 3000 déjà utilisé** : change dans `docker-compose.yml` par ex. `"8080:3000"` et accède via `http://IP:8080`.
-- **Erreur de build** : vérifie que tout le projet est bien présent (notamment `server/`, `src/`, `Dockerfile`, `docker-compose.yml`).
-- **502 Bad Gateway** avec Nginx : vérifie que les conteneurs tournent (`docker compose ps`) et que le proxy pointe bien vers `http://127.0.0.1:3000`.
-
-Si tu me donnes ton OS VPS (Ubuntu/Debian), ton hébergeur et si tu as un domaine ou juste une IP, je peux adapter les commandes exactes pour toi.
+- Poker : ouvrir l’URL du front Poker → classement, login, sessions.
+- Betting : ouvrir l’URL du front Betting → accueil, « Prochain match », paris, admin (avec le compte Killian).
+- Les deux doivent utiliser la même base (mêmes utilisateurs) et les liens « Poker » / « Match programmé » doivent pointer vers les bonnes URLs si `VITE_*` ont été définis au build.

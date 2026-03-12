@@ -198,13 +198,19 @@ usersRouter.get("/:userId/profile", authMiddleware, async (req, res) => {
     res.status(404).json({ error: "Utilisateur introuvable." });
     return;
   }
-  const [balance, badges] = await Promise.all([
+  const [balance, badges, pendingStakesResult] = await Promise.all([
     getCurrentBalance(userId),
     computeUserBadges(prisma, userId),
+    prisma.bet.aggregate({
+      where: { userId, status: "PENDING" },
+      _sum: { amount: true },
+    }),
   ]);
+  const pendingStakes = pendingStakesResult._sum.amount ?? 0;
   res.json({
     user: { ...user, avatarUrl: user.avatarUrl ?? null, bio: user.bio ?? null },
     balance,
+    pendingStakes,
     badges,
   });
 });

@@ -1,12 +1,17 @@
-# Poker Gambetta
+# Poker Gambetta & Betting Gambetta
 
-Application web pour gérer les comptes (ledger) d’une table de poker : classement des joueurs, soldes et historique. Déployable sur un VPS avec Docker.
+Monorepo contenant :
+
+- **Poker Gambetta** : gestion des comptes (ledger) d’une table de poker — classement, soldes, sessions, historique.
+- **Betting Gambetta** : paris amicaux sur les matchs CS de l’équipe ArcMonkey — mise, règlement manuel ou automatique (API Faceit), historique des paris.
+
+Les deux apps partagent le **même backend** (Express, Prisma, PostgreSQL) et le **même compte utilisateur** (auth, bankroll).
 
 ## Stack
 
-- **Frontend** : React 19, TypeScript, Vite, React Router, TanStack Query
-- **Backend** : Node.js, Express, Prisma
-- **Base de données** : PostgreSQL
+- **Frontends** : React 19, TypeScript, Vite, React Router, TanStack Query (Poker : port 5173, Betting : port 5174 en dev).
+- **Backend** : Node.js, Express, Prisma.
+- **Base de données** : PostgreSQL.
 
 ## Développement local
 
@@ -17,7 +22,7 @@ Application web pour gérer les comptes (ledger) d’une table de poker : classe
 
 ### 1. Base de données
 
-Crée une base et note l’URL (ex. `postgresql://user:pass@localhost:5432/poker`).
+Crée une base et note l’URL (ex. `postgresql://poker:poker@localhost:5432/poker`).
 
 Avec Docker :
 
@@ -25,22 +30,24 @@ Avec Docker :
 docker run -d --name poker-db -e POSTGRES_USER=poker -e POSTGRES_PASSWORD=poker -e POSTGRES_DB=poker -p 5432:5432 postgres:16-alpine
 ```
 
-### 2. Variables d’environnement (obligatoire avant les commandes backend)
+### 2. Variables d’environnement
 
-**Crée le fichier `server/.env`** (Prisma et le seed en ont besoin) :
+**Backend** — crée `server/.env` à partir de `server/.env.example` :
 
 ```bash
-# Depuis la racine du projet
 copy server\.env.example server\.env
 ```
 
-Sous Linux/macOS : `cp server/.env.example server/.env`
+Édite au besoin : `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (en dev : `http://localhost:5173,http://localhost:5174`).  
+Pour le règlement automatique des paris depuis Faceit, renseigne `FACEIT_API_KEY` (voir [developers.faceit.com](https://developers.faceit.com/)).
 
-Puis édite `server/.env` si besoin : par défaut l’URL pointe vers une base locale `poker` (user/mot de passe `poker`). Si tu as lancé le conteneur Docker ci‑dessus, garde ces valeurs.
+**Frontends (optionnel en dev)**  
+- `apps/poker-gambetta/.env` : `VITE_BETTING_APP_URL=http://localhost:5174` pour le lien vers Betting depuis la carte « Match programmé ».  
+- `apps/betting-gambetta/.env` : `VITE_POKER_APP_URL=http://localhost:5173` pour l’onglet « Poker » dans la nav.
 
-### 3. Backend
+### 3. Installation et migrations
 
-Exécute chaque commande dans l’ordre (sous **Windows PowerShell**, ne pas utiliser `&&`, lancer les commandes une par une) :
+À la racine (PowerShell, commandes une par une si besoin) :
 
 ```bash
 cd server
@@ -48,111 +55,81 @@ npm install
 npx prisma generate
 npx prisma migrate deploy
 npm run db:seed
-npm run dev
+cd ..
+npm install
 ```
 
-Le serveur tourne sur `http://localhost:3000`.
+### 4. Lancer tout (backend + Poker + Betting)
 
-### 4. Frontend
-
-Dans un autre terminal, à la racine du projet :
+À la racine :
 
 ```bash
-npm install
-npm run dev
+npm run dev:all
 ```
 
-Le frontend tourne sur `http://localhost:5173` et appelle l’API via le proxy Vite (`/api` → `localhost:3000`).
+- **API** : http://localhost:3001  
+- **Poker** : http://localhost:5173 (proxy `/api` → 3001)  
+- **Betting** : http://localhost:5174 (proxy `/api` → 3001)
 
-**Alternative (tout en un)** : à la racine du projet, `npm run dev:all` lance le backend et le frontend dans le même terminal.
+Pour lancer uniquement le backend : `npm run dev:server` (depuis `server/`).  
+Pour un seul front : `npm run dev:poker` ou `npm run dev:betting`.
 
-### Comptes de démo (après seed)
+### Comptes (après seed)
 
-- **Croupier** : Hugo / mot de passe `hugo`
+- **Croupier** : Hugo / `hugo`  
 - **Joueurs** : Thomas, Killian, Camille, Lou, Eliott, Marvin, Léane, Paul, Clementine — mot de passe = prénom en minuscules.
 
----
-
-## Déploiement sur un VPS (Docker)
-
-**Guide détaillé : [DEPLOY.md](./DEPLOY.md)** (connexion SSH, Docker, Nginx, HTTPS).
-
-### Prérequis
-
-- Docker et Docker Compose sur le VPS
-
-### 1. Cloner le projet
-
-```bash
-git clone <url-du-repo> poker-gambetta
-cd poker-gambetta
-```
-
-### 2. Variables d’environnement
-
-Crée un fichier `.env` à la racine (à côté de `docker-compose.yml`) :
-
-```env
-JWT_SECRET=<génère-une-clé-secrète-longue-et-aléatoire>
-CORS_ORIGIN=https://ton-domaine.com
-```
-
-Pour `CORS_ORIGIN`, mets l’URL publique de l’app (ex. `https://poker.example.com`). Si tu sers tout depuis le même domaine (app + API sur le même port), tu peux mettre la même URL.
-
-### 3. Lancer avec Docker Compose
-
-```bash
-docker compose up -d --build
-```
-
-- L’app (front + API) est exposée sur le port **3000**.
-- PostgreSQL tourne en interne (volume `postgres_data` pour la persistance).
-- Au premier démarrage, les migrations Prisma et le seed sont exécutés automatiquement.
-
-### 4. Accès
-
-- En direct : `http://<IP-du-VPS>:3000`
-- En production, place un reverse proxy (Nginx, Caddy, Traefik) devant le port 3000, avec HTTPS (Let’s Encrypt).
-
-### Commandes utiles
-
-```bash
-# Voir les logs
-docker compose logs -f app
-
-# Arrêter
-docker compose down
-
-# Recréer les conteneurs après un git pull
-docker compose up -d --build
-```
+Sur **Betting**, le compte **Killian** a les droits admin (matchs, équipe ArcMonkey, règlement des paris).
 
 ---
 
-## Structure du projet
+## Déploiement (Docker)
+
+Chaque app (Poker ou Betting) est déployée avec **son propre backend** (une instance Express par front).
+
+1. À la racine : crée un `.env` avec `JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_URL`, etc.
+2. `docker compose up -d --build`
+3. **poker-app** : port 3000 ; **betting-app** : port 3001.  
+En prod, configure un reverse proxy (Nginx, Caddy) et les variables `VITE_*` au build si besoin.
+
+---
+
+## Structure
 
 ```
 poker-gambetta/
-├── src/                 # Frontend React
-│   ├── components/
-│   ├── pages/
-│   └── lib/
-│       └── api.ts       # Client API
-├── server/              # Backend Express
+├── apps/
+│   ├── poker-gambetta/     # Front Poker (classement, sessions, ledger)
+│   └── betting-gambetta/  # Front Betting (matchs, paris, règlement)
+├── server/                 # Backend commun
 │   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── migrations/
 │   └── src/
 │       ├── index.ts
-│       ├── auth.ts      # JWT, middleware
+│       ├── auth.ts
+│       ├── faceit.ts      # API Faceit (règlement auto)
+│       ├── bettingConstants.ts
 │       └── routes/
+│           ├── auth.ts
+│           ├── betting.ts
+│           └── ...
 ├── scripts/
-│   └── entrypoint.sh   # Migrations + seed au démarrage Docker
-├── Dockerfile
 ├── docker-compose.yml
-└── .env.example
+├── Dockerfile
+└── package.json
 ```
 
-## Licence
+## Variables d’environnement (résumé)
 
-Privé / usage personnel.
+| Variable | Où | Description |
+|----------|-----|-------------|
+| `DATABASE_URL` | server | URL PostgreSQL |
+| `JWT_SECRET` | server | Secret des cookies de session |
+| `CORS_ORIGIN` | server | Origines autorisées (ex. `http://localhost:5173,http://localhost:5174`) |
+| `FACEIT_API_KEY` | server | Clé API Faceit (règlement auto des paris) |
+| `STEAM_API_KEY` | server | Clé API Steam (avatars/pseudos ArcMonkey) |
+| `VITE_BETTING_APP_URL` | poker-gambetta | URL du site Betting (carte « Match programmé ») |
+| `VITE_POKER_APP_URL` | betting-gambetta | URL du site Poker (onglet « Poker ») |
+
+---
+
+Licence : privé / usage personnel.

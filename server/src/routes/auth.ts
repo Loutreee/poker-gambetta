@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { signToken } from "../auth.js";
@@ -7,7 +8,13 @@ import { authMiddleware } from "../auth.js";
 const prisma = new PrismaClient();
 export const authRouter = Router();
 
-authRouter.post("/login", async (req, res) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Trop de tentatives de connexion. Réessaye dans 15 minutes." },
+});
+
+authRouter.post("/login", loginLimiter, async (req, res) => {
   const { userId, password } = req.body as { userId?: string; password?: string };
   if (!userId || typeof password !== "string") {
     res.status(400).json({ error: "userId et password requis" });
