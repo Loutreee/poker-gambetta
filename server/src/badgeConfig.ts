@@ -28,6 +28,16 @@ const DEFAULTS: Record<string, BadgeDisplay> = {
   [BADGE_IDS.RECORD_BEST_SESSION]: { name: "Ma question préférée", description: "Détenir le record de gain sur une soirée", bgColor: "#a855f7", iconColor: "#f5f3ff" },
   [BADGE_IDS.RECORD_SERIE_NOIRE]: { name: "Série noire", description: "3 soirées sans gain", bgColor: "#475569", iconColor: "#cbd5e1" },
   [BADGE_IDS.SPECIAL_EUH_MEC]: { name: "Euuh mec ?", description: "Parier sur la défaite de ArcMonkey ... et gagner", bgColor: "#7c3aed", iconColor: "#ede9fe" },
+  [BADGE_IDS.BETS_FIRST]: { name: "Premier pari", description: "A fait son premier pari", bgColor: "#0f766e", iconColor: "#ecfeff" },
+  [BADGE_IDS.BETS_FIRST_WIN]: { name: "Premier ticket gagnant", description: "A gagné son premier pari", bgColor: "#22c55e", iconColor: "#ecfdf3" },
+  [BADGE_IDS.BETS_10]: { name: "Parieur occasionnel", description: "10 paris effectués", bgColor: "#0284c7", iconColor: "#e0f2fe" },
+  [BADGE_IDS.BETS_50]: { name: "Parieur sérieux", description: "50 paris effectués", bgColor: "#0369a1", iconColor: "#e0f2fe" },
+  [BADGE_IDS.BETS_100]: { name: "Parieur compulsif", description: "100 paris effectués", bgColor: "#0f172a", iconColor: "#f9fafb" },
+  [BADGE_IDS.BETS_LOSING_STREAK]: { name: "No run good", description: "Perdre 5 paris d'affilée", bgColor: "#1e293b", iconColor: "#e5e7eb" },
+  [BADGE_IDS.SPECIAL_LAST_SECOND_BET]: { name: "Dernière seconde", description: "Gagner un pari placé dans la dernière minute", bgColor: "#eab308", iconColor: "#fefce8" },
+  [BADGE_IDS.SPECIAL_ALL_IN_BET]: { name: "All-in IRL", description: "Mettre plus de 50% de sa bankroll sur un pari gagnant", bgColor: "#b91c1c", iconColor: "#fee2e2" },
+  [BADGE_IDS.SPECIAL_CONTRA_PUBLIC]: { name: "À contre-courant", description: "Gagner un pari où tu es dans la minorité des parieurs", bgColor: "#4b5563", iconColor: "#e5e7eb" },
+  [BADGE_IDS.SPECIAL_TES_CON]: { name: "T'es con ?", description: "Parier l'intégralité de son bankroll", bgColor: "#dc2626", iconColor: "#fef2f2" },
 };
 
 const ALL_BADGE_IDS = Object.keys(DEFAULTS);

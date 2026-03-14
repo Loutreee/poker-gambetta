@@ -97,7 +97,7 @@ export default function AdminBadgesPage() {
                 {cat.badgeIds.map((badgeId) => {
                   const fullConfig = getBadgeConfig(badgeId, config[badgeId]);
                   if (!fullConfig) return null;
-                  const { name, bgColor, iconColor, Icon } = fullConfig;
+                  const { name, bgColor, iconColor, Icon, imageSrc } = fullConfig;
                   return (
                     <div key={badgeId} className="admin-badge-item admin-badge-item--editable">
                       <div
@@ -107,7 +107,11 @@ export default function AdminBadgesPage() {
                           ["--badge-icon-color" as string]: iconColor,
                         }}
                       >
-                        <Icon className="admin-badge-circle-icon" size={28} strokeWidth={2} aria-hidden />
+                        {imageSrc ? (
+                          <img src={imageSrc} alt="" className="admin-badge-circle-img" aria-hidden />
+                        ) : (
+                          <Icon className="admin-badge-circle-icon" size={28} strokeWidth={2} aria-hidden />
+                        )}
                       </div>
                       <span className="admin-badge-title">{name}</span>
                       <button

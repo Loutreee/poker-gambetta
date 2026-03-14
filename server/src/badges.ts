@@ -29,6 +29,18 @@ export const BADGE_IDS = {
   RECORD_SERIE_NOIRE: "record_serie_noire",
   /** Parier sur la défaite d'ArcMonkey et gagner. */
   SPECIAL_EUH_MEC: "special_euh_mec",
+  // Badges liés aux paris
+  BETS_FIRST: "bets_first",
+  BETS_FIRST_WIN: "bets_first_win",
+  BETS_10: "bets_10",
+  BETS_50: "bets_50",
+  BETS_100: "bets_100",
+  BETS_LOSING_STREAK: "bets_losing_streak",
+  SPECIAL_LAST_SECOND_BET: "special_last_second_bet",
+  SPECIAL_ALL_IN_BET: "special_all_in_bet",
+  SPECIAL_CONTRA_PUBLIC: "special_contra_public",
+  /** Parier l'intégralité de son bankroll (payload.fullBankroll enregistré à la création). */
+  SPECIAL_TES_CON: "special_tes_con",
 } as const;
 
 
@@ -177,6 +189,112 @@ export async function computeUserBadges(prisma: PrismaClient, userId: string): P
         break;
       }
     } else streak = 0;
+  }
+
+  // ==== Badges liés aux paris (Bet) ====
+  const myBets = await prisma.bet.findMany({
+    where: { userId },
+    select: { id: true, amount: true, status: true, createdAt: true, betType: true, payload: true, matchId: true },
+  });
+
+  const totalBets = myBets.length;
+  const wonBets = myBets.filter((b) => b.status === "WON");
+
+  if (totalBets >= 1) {
+    result.push({ badgeId: BADGE_IDS.BETS_FIRST, count: 1 });
+  }
+  if (wonBets.length >= 1) {
+    result.push({ badgeId: BADGE_IDS.BETS_FIRST_WIN, count: 1 });
+  }
+  if (totalBets >= 10) {
+    result.push({ badgeId: BADGE_IDS.BETS_10, count: 1 });
+  }
+  if (totalBets >= 50) {
+    result.push({ badgeId: BADGE_IDS.BETS_50, count: 1 });
+  }
+  if (totalBets >= 100) {
+    result.push({ badgeId: BADGE_IDS.BETS_100, count: 1 });
+  }
+
+  // Série de 5 paris perdus d'affilée (par ordre chronologique)
+  const betsSortedByDate = [...myBets].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  let losingStreak = 0;
+  for (const b of betsSortedByDate) {
+    if (b.status === "LOST") {
+      losingStreak++;
+      if (losingStreak >= 5) {
+        result.push({ badgeId: BADGE_IDS.BETS_LOSING_STREAK, count: 1 });
+        break;
+      }
+    } else {
+      losingStreak = 0;
+    }
+  }
+
+  // Spécial : Dernière seconde (pari gagné placé dans la dernière minute avant le match)
+  const betMatchIds = Array.from(new Set(myBets.map((b) => b.matchId)));
+  const betMatches =
+    betMatchIds.length > 0
+      ? await prisma.match.findMany({
+          where: { id: { in: betMatchIds } },
+          select: { id: true, scheduledAt: true },
+        })
+      : [];
+  const matchSchedule = new Map(betMatches.map((m) => [m.id, m.scheduledAt]));
+
+  const hasLastSecondBetWin = wonBets.some((b) => {
+    const matchStart = matchSchedule.get(b.matchId);
+    if (!matchStart) return false;
+    const diffMs = matchStart.getTime() - b.createdAt.getTime();
+    return diffMs > 0 && diffMs <= 60_000;
+  });
+  if (hasLastSecondBetWin) {
+    result.push({ badgeId: BADGE_IDS.SPECIAL_LAST_SECOND_BET, count: 1 });
+  }
+
+  // Spécial : All-in IRL (mise >= 50% de la bankroll de paris au moment du bet)
+  // On approxime la bankroll de paris par le solde global (ledgerSum) actuel.
+  const bankrollForBets = Number(ledgerSum);
+  if (bankrollForBets > 0) {
+    const hasAllInBetWin = wonBets.some((b) => b.amount >= bankrollForBets / 2);
+    if (hasAllInBetWin) {
+      result.push({ badgeId: BADGE_IDS.SPECIAL_ALL_IN_BET, count: 1 });
+    }
+  }
+
+  // Spécial : À contre-courant (moins de 20% des parieurs sur ton outcome VICTORY et tu gagnes)
+  const allVictoryBets = await prisma.bet.findMany({
+    where: { betType: "VICTORY" },
+    select: { matchId: true, userId: true, payload: true },
+  });
+  const hasContraPublic = wonBets.some((b) => {
+    if (b.betType !== "VICTORY") return false;
+    const payload = b.payload as Record<string, unknown> | null;
+    const outcome = payload?.outcome;
+    if (!outcome) return false;
+    const sameMatchBets = allVictoryBets.filter((ob) => ob.matchId === b.matchId);
+    if (sameMatchBets.length === 0) return false;
+    const sameOutcomeBets = sameMatchBets.filter((ob) => {
+      const p = ob.payload as Record<string, unknown> | null;
+      return p?.outcome === outcome;
+    });
+    const totalBetsOnMatch = sameMatchBets.length;
+    if (totalBetsOnMatch === 0) return false;
+    const userIdsOnOutcome = new Set(sameOutcomeBets.map((ob) => ob.userId));
+    const ratio = userIdsOnOutcome.size / new Set(sameMatchBets.map((ob) => ob.userId)).size;
+    return ratio < 0.2;
+  });
+  if (hasContraPublic) {
+    result.push({ badgeId: BADGE_IDS.SPECIAL_CONTRA_PUBLIC, count: 1 });
+  }
+
+  // Spécial : T'es con ? (avoir parié l'intégralité de son bankroll au moins une fois)
+  const hasFullBankrollBet = myBets.some((b) => {
+    const p = b.payload as Record<string, unknown> | null;
+    return p?.fullBankroll === true;
+  });
+  if (hasFullBankrollBet) {
+    result.push({ badgeId: BADGE_IDS.SPECIAL_TES_CON, count: 1 });
   }
 
   return result;
