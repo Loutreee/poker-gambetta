@@ -127,6 +127,23 @@ server {
 | `FACEIT_API_KEY` | runtime (compose) | Non | Règlement automatique des paris depuis Faceit. |
 | `STEAM_API_KEY` | runtime (compose) | Non | Avatars / pseudos Steam (Betting). |
 
+## Test de déploiement Docker
+
+Pour vérifier que le build et le démarrage du stack fonctionnent (sans reverse proxy) :
+
+```bash
+npm run test:docker
+```
+
+Ce script (voir `scripts/docker-deploy-test.cjs`) :
+1. Lance `docker compose build --no-cache`
+2. Démarre le stack (`docker compose up -d`)
+3. Attend que les fronts répondent sur les ports 3000 (Poker) et 3001 (Betting)
+4. Vérifie les endpoints `/` et `/api/auth/me`
+5. Arrête le stack (`docker compose down`)
+
+**Prérequis** : Docker et Docker Compose installés ; les ports 3000, 3001 et 5432 doivent être libres. Aucun `.env` n’est requis (le script utilise des variables de test).
+
 ## Vérification rapide
 
 - Poker : ouvrir l’URL du front Poker → classement, login, sessions.

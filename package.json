@@ -14,7 +14,8 @@
     "build": "npm run build:poker && npm run build:betting && cd server && npm run build",
     "lint": "eslint .",
     "preview:poker": "npm run preview --prefix apps/poker-gambetta",
-    "preview:betting": "npm run preview --prefix apps/betting-gambetta"
+    "preview:betting": "npm run preview --prefix apps/betting-gambetta",
+    "test:docker": "node scripts/docker-deploy-test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",

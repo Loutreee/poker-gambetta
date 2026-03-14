@@ -17,7 +17,9 @@ COPY apps/${APP_NAME}/tsconfig.json ./tsconfig.json
 COPY apps/${APP_NAME}/tsconfig.app.json ./tsconfig.app.json
 COPY apps/${APP_NAME}/tsconfig.node.json ./tsconfig.node.json
 COPY apps/${APP_NAME}/src ./src
+COPY apps/shared ./shared
 COPY apps/${APP_NAME}/public ./public
+ENV DOCKER_BUILD=1
 RUN npm run build
 
 # Stage 2: build backend + runtime
