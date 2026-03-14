@@ -1546,6 +1546,13 @@ a {
 .profile-badge-circle-icon {
   color: var(--badge-icon-color);
 }
+.profile-badge-circle-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
 .profile-badge-tooltip {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1836,6 +1843,13 @@ a {
 .admin-badge-circle-icon {
   color: var(--badge-icon-color);
   flex-shrink: 0;
+}
+.admin-badge-circle-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 .admin-badge-tooltip {
   position: absolute;

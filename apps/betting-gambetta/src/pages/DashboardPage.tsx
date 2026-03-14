@@ -39,8 +39,12 @@ function RankTrend({ change }: { change: number }) {
   return <span className="rank-trend rank-trend-down" title="A perdu des places cette semaine">−{change}</span>;
 }
 
+const HISTORY_PAGE_SIZE = 15;
+
 export default function DashboardPage() {
   const [particlesReady, setParticlesReady] = useState(false);
+  const [showAllPerso, setShowAllPerso] = useState(false);
+  const [showAllGlobal, setShowAllGlobal] = useState(false);
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -189,24 +193,31 @@ export default function DashboardPage() {
         {myEntries.length === 0 ? (
           <p style={{ color: "#444" }}>Aucune entrée pour l'instant.</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Delta</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {myEntries.slice(0, 12).map((e) => (
-                <tr key={e.id}>
-                  <td>{formatDate(e.createdAt)}</td>
-                  <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
-                  <td>{e.note}</td>
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Delta</th>
+                  <th>Note</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(showAllPerso ? myEntries : myEntries.slice(0, HISTORY_PAGE_SIZE)).map((e) => (
+                  <tr key={e.id}>
+                    <td>{formatDate(e.createdAt)}</td>
+                    <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
+                    <td>{e.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {myEntries.length > HISTORY_PAGE_SIZE && !showAllPerso && (
+              <button type="button" className="btn secondary" style={{ marginTop: 12 }} onClick={() => setShowAllPerso(true)}>
+                Voir plus ({myEntries.length - HISTORY_PAGE_SIZE} de plus)
+              </button>
+            )}
+          </>
         )}
 
         <div style={{ marginTop: 16, borderTop: "1px solid #eef0f4", paddingTop: 12 }}>
@@ -214,26 +225,33 @@ export default function DashboardPage() {
           {latestGlobal.length === 0 ? (
             <p style={{ color: "#444" }}>Rien à afficher.</p>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Joueur</th>
-                  <th>Delta</th>
-                  <th>Note</th>
-                </tr>
-              </thead>
-              <tbody>
-                {latestGlobal.map((e) => (
-                  <tr key={e.id}>
-                    <td>{formatDate(e.createdAt)}</td>
-                    <td>{userIdToName[e.userId] ?? e.userId}</td>
-                    <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
-                    <td>{e.note}</td>
+            <>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Joueur</th>
+                    <th>Delta</th>
+                    <th>Note</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(showAllGlobal ? latestGlobal : latestGlobal.slice(0, HISTORY_PAGE_SIZE)).map((e) => (
+                    <tr key={e.id}>
+                      <td>{formatDate(e.createdAt)}</td>
+                      <td>{userIdToName[e.userId] ?? e.userId}</td>
+                      <td style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{formatAmount(e.amount)}</td>
+                      <td>{e.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {latestGlobal.length > HISTORY_PAGE_SIZE && !showAllGlobal && (
+                <button type="button" className="btn secondary" style={{ marginTop: 12 }} onClick={() => setShowAllGlobal(true)}>
+                  Voir plus ({latestGlobal.length - HISTORY_PAGE_SIZE} de plus)
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

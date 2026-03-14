@@ -762,13 +762,15 @@ bettingRouter.post("/matches/:matchId/bets", createBetLimiter, async (req, res) 
     res.status(400).json({ error: "Solde disponible insuffisant (solde moins paris en cours)." });
     return;
   }
+  const fullBankroll = amount >= availableBalance;
+  const payloadToSave = { ...payload, fullBankroll } as object;
   await prisma.bet.create({
     data: {
       matchId,
       userId: user.id,
       amount,
       betType,
-      payload: payload as object,
+      payload: payloadToSave,
     },
   });
   res.status(201).json({ ok: true });
